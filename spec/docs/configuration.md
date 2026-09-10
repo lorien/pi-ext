@@ -35,7 +35,7 @@ to a file holding it:
 ```json
 {
   "zaiWebSearch": {
-    "apiKey": "file:~/.keys/zai.key"
+    "apiKey": "file:<path>"
   }
 }
 ```

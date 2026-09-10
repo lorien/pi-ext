@@ -13,7 +13,7 @@
   end-user documentation and that everything under `spec/` is internal;
   `spec/docs/overview.md` marks the `spec/docs/` entries internal and
   rewrites the `README.md` layout bullet to match.
-- Marked the README-sync `[open]` item in
+- Marked the README-sync drift item `[acted]` in
   `report-1789070513-readme-conventions.md` `[acted]`: resolved by owner
   decision the other way — end-user behavior is restated in `README.md`
   rather than deferred to `spec/docs/`.
@@ -26,11 +26,11 @@
 
 ### Future-task notes
 
-- `[open]` `spec/docs/configuration.md:38` and `adr/0008` prose use
-  `~/.keys/zai.key` as the example path. That is a private dot-directory,
-  which `conventions.md` forbids committing; the README example uses the
-  `file:<path>` placeholder instead. Normalizing the spec examples to the
-  same placeholder would remove the ambiguity.
+- `[acted]` `spec/docs/configuration.md:38` used `~/.keys/zai.key` as the
+  example path. That is a private dot-directory, which `conventions.md`
+  forbids committing. Normalized to the `file:<path>` placeholder in the
+  same follow-up; ADR-0008 and the README already used the placeholder,
+  so the examples now agree everywhere.
 
 ### Tooling/process
 
