@@ -43,9 +43,11 @@
 
 ### Future-task notes
 
-- `[open]` Run `npm run test:e2e` with a valid key at least once, to
-  confirm the positive path. It is the only part of the repository that
-  requires a real credential.
+- `[acted]` Run `npm run test:e2e` with a valid key at least once, to
+  confirm the positive path. Done: `zaiWebSearch.apiKey` was configured in
+  the global pi settings, and both e2e checks pass. The live search also
+  ran through the tool itself inside a pi session, which confirms the
+  settings source works end to end with no reload.
 - `[open]` The endpoint is a module constant in `runZaiWebSearch()`, so
   the request body and the parameter mapping have no offline coverage and
   cannot be stubbed without exporting the endpoint and threading it

@@ -1,0 +1,59 @@
+## Report on task: Verify the live end-to-end path
+
+### Done
+
+- Configured `zaiWebSearch.apiKey` in the global pi settings file
+  (`~/.pi/agent/settings.json`), so the key resolves through the source
+  documented in `configuration.md` and ADR-0001, rather than through an
+  environment variable.
+- Preserved the 12 existing top-level settings keys; the file was edited
+  with a read, set one nested key, write round trip.
+- Set the file mode to `0600`. pi does not restrict the mode of
+  `settings.json`, and the file now holds a credential.
+- Ran `npm run test:e2e`: both checks pass, no skips.
+- Called the tool from a live pi session and received three formatted
+  results with links. This is the strongest available check: the
+  extension as pi actually loads it, reading the key from the settings
+  file.
+
+### Observations
+
+- The live search takes roughly 2.4 seconds for `count: 3`; the
+  invalid-key check returns in roughly 0.24 seconds.
+- `count: 3` was honoured in both runs: exactly three results, each with a
+  link.
+- The settings source takes effect with no reload. `resolveZaiKey()` reads
+  the file per call, so a session that started before the key existed
+  still resolves it. That is a property of reading configuration at call
+  time rather than at load time, and it is worth knowing for any other
+  extension that reads settings.
+- The unit suite is unaffected: `npm test` still runs 14 offline tests.
+
+### Spec/ADR amendments
+
+- `[acted]` Marked the positive-path item `[acted]` in
+  `report-1789071803-e2e-check.md`, in this commit, per
+  `report_tracking.md`.
+- No document changes were needed: `configuration.md` and ADR-0001 already
+  describe the settings source that this run exercised.
+
+### Future-task notes
+
+- `[open]` The credential now lives in plaintext in a pi settings file.
+  That is the accepted design from ADR-0001 and needs no change, but the
+  file mode is not enforced by pi: an editor or a rewrite can widen it.
+  Nothing currently checks it.
+- `[open]` The live check still spends one search request per run, and
+  nothing runs it on a schedule or in automation.
+- `[open]` `runZaiWebSearch()` remains untestable offline because its
+  endpoint is a module constant; see
+  `report-1789071803-e2e-check.md`.
+
+### Tooling/process
+
+- `[acted]` A missing key is now distinguishable from a rejected key by
+  behavior alone: with no key the live suite skips loudly, and with a
+  wrong key it fails. Both were observed in this work.
+- `[acted]` Editing pi's settings file while pi is running is safe in this
+  case: the extension reads it per call, and pi's own write path merges
+  into the file's current contents, so the added section survives.
