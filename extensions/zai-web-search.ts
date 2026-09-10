@@ -15,11 +15,16 @@
  * section survives normal pi usage. The agent dir is resolved with pi's own
  * getAgentDir(), so $PI_CODING_AGENT_DIR is honored.
  */
-import { CONFIG_DIR_NAME, getAgentDir, type ExtensionAPI } from "@earendil-works/pi-coding-agent";
-import { Type } from "typebox";
-import { StringEnum } from "@earendil-works/pi-ai";
+
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { StringEnum } from "@earendil-works/pi-ai";
+import {
+  CONFIG_DIR_NAME,
+  type ExtensionAPI,
+  getAgentDir,
+} from "@earendil-works/pi-coding-agent";
+import { Type } from "typebox";
 
 const ENDPOINT = "https://api.z.ai/api/paas/v4/web_search";
 const REQUEST_TIMEOUT_MS = 30_000;
@@ -27,7 +32,12 @@ const TOOL_NAME = "zai_web_search";
 const CONFIG_KEY = "zaiWebSearch";
 
 const RECENCY = ["oneDay", "oneWeek", "oneMonth", "oneYear", "noLimit"] as const;
-const ENGINES = ["search-prime", "search_pro_jina", "search_pro", "search_std"] as const;
+const ENGINES = [
+  "search-prime",
+  "search_pro_jina",
+  "search_pro",
+  "search_std",
+] as const;
 
 type SearchResult = {
   title?: string;
@@ -137,7 +147,9 @@ export async function runZaiWebSearch(
   try {
     json = JSON.parse(text) as SearchResponse;
   } catch {
-    throw new Error(`z.ai web_search returned non-JSON (HTTP ${res.status}): ${text.slice(0, 300)}`);
+    throw new Error(
+      `z.ai web_search returned non-JSON (HTTP ${res.status}): ${text.slice(0, 300)}`,
+    );
   }
   if (!res.ok || json.error) {
     const code = json.error?.code ?? res.status;
@@ -174,16 +186,27 @@ export default function (pi: ExtensionAPI) {
     parameters: Type.Object({
       query: Type.String({ description: "The search query" }),
       count: Type.Optional(
-        Type.Integer({ minimum: 1, maximum: 50, description: "Number of results to return (default 10)" }),
+        Type.Integer({
+          minimum: 1,
+          maximum: 50,
+          description: "Number of results to return (default 10)",
+        }),
       ),
       recency: Type.Optional(
-        StringEnum(RECENCY, { description: "Only return results from this time range (default noLimit)" }),
+        StringEnum(RECENCY, {
+          description: "Only return results from this time range (default noLimit)",
+        }),
       ),
       domain: Type.Optional(
-        Type.String({ description: "Restrict results to this domain, e.g. doc.rust-lang.org (best effort)" }),
+        Type.String({
+          description:
+            "Restrict results to this domain, e.g. doc.rust-lang.org (best effort)",
+        }),
       ),
       engine: Type.Optional(
-        StringEnum(ENGINES, { description: "Search engine backend (default search-prime)" }),
+        StringEnum(ENGINES, {
+          description: "Search engine backend (default search-prime)",
+        }),
       ),
     }),
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
@@ -191,7 +214,11 @@ export default function (pi: ExtensionAPI) {
       const json = await runZaiWebSearch(params as ZaiWebSearchParams, key, signal);
       return {
         content: [{ type: "text" as const, text: formatSearchResults(json) }],
-        details: { count: json.search_result?.length ?? 0, intent: json.search_intent, raw: json },
+        details: {
+          count: json.search_result?.length ?? 0,
+          intent: json.search_intent,
+          raw: json,
+        },
       };
     },
   });

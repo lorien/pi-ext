@@ -34,9 +34,13 @@ source with no build step.
 
 - `package.json` — pi manifest. Declares the package name, the `pi`
   extension and skill directories, the peer dependencies on pi, and the
-  development dependencies.
+  development dependencies and scripts (`test`, `typecheck`, `lint`,
+  `format`).
 - `tsconfig.json` — TypeScript configuration used by `tsc --noEmit`. No
   emit is configured; the file exists for checking only.
+- `biome.json` — the linter and formatter configuration, applied by
+  `npm run lint` and `npm run format`. It covers TypeScript and JSON, not
+  markdown. See `adr/0004-biome-for-lint-and-format.md`.
 - `extensions/` — one TypeScript file per extension. Currently
   `zai-web-search.ts`, which provides the `zai_web_search` tool.
 - `test/` — the unit tests, run by Node's built-in test runner through

@@ -9,6 +9,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "format": "biome check --write .",
+    "lint": "biome check .",
     "test": "node --test \"test/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
@@ -26,7 +28,8 @@
     "typebox": "*"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.13",
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^7.0.2"
   }
 }

@@ -1,8 +1,8 @@
-import { afterEach, beforeEach, describe, test } from "node:test";
 import assert from "node:assert/strict";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { afterEach, beforeEach, describe, test } from "node:test";
 
 import { resolveZaiKey } from "../extensions/zai-web-search.ts";
 

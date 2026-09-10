@@ -6,13 +6,14 @@ Run all of these before finishing any task; `spec/skills/work.md` makes
 this the first item of the final list.
 
 - `npm install` — installs the development dependencies (`typescript`,
-  `@types/node`).
+  `@biomejs/biome`, `@types/node`).
 - `npm run typecheck` — runs `tsc --noEmit` over `extensions/**/*.ts` and
   `test/**/*.ts`.
 - `npm test` — runs the unit tests.
+- `npm run lint` — runs Biome over the TypeScript and JSON files.
 
-All must pass. `typecheck` is expected to produce no output, and `test`
-is expected to report no failures.
+All must pass. `typecheck` and `lint` are expected to report nothing
+wrong, and `test` is expected to report no failures.
 
 ### Local-content check
 
@@ -46,6 +47,23 @@ replace it with a placeholder or remove it.
 
 Finally, confirm that no key, token, or password appears in the sources or
 the documents, and that `.gitignore` still covers the generated files.
+
+### Markdown check
+
+Biome covers TypeScript and JSON, not markdown, so the markdown rules in
+`conventions.md` are checked here. Neither command may print anything:
+
+```bash
+find . -name '*.md' -not -path './node_modules/*' -not -path './.git/*' \
+  -exec awk 'length > 88 {print FILENAME": "FNR}' {} +
+```
+
+```bash
+grep -rn '^|' --include='*.md' --exclude-dir=node_modules .
+```
+
+The first finds lines over the cap, the second finds tables. Note that
+markdown formatting is not auto-fixed: apply the fixes by hand.
 
 ## Manual smoke test
 

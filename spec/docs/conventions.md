@@ -85,12 +85,24 @@ References: ADR-0001
 
 ## TypeScript
 
+Style is enforced, not just described; see
+`adr/0004-biome-for-lint-and-format.md`. Run `npm run lint` to check and
+`npm run format` to apply.
+
 - ES modules; the package sets `"type": "module"`.
-- Double quotes, semicolons, two-space indentation.
-- `strict` is enabled. Avoid `any`; prefer `unknown` plus narrowing.
+- Double quotes, semicolons, trailing commas, two-space indentation, and a
+  88-character line width, the same cap as the markdown.
+- Imports are ordered by Biome: `node:` built-ins first, then packages.
+- `strict` is enabled and checked by `tsc`. Avoid `any`; prefer `unknown`
+  plus narrowing.
 - Import Node built-ins with the `node:` prefix, e.g. `node:fs`.
 - `@earendil-works/pi-*` and `typebox` are peer dependencies. Use
-  `import type` when only types are imported.
+  `import type` when only types are imported; `verbatimModuleSyntax`
+  requires it.
+- The recommended Biome lint set is enabled. It is not type-aware, so it
+  does not catch promise misuse; `tsc` is the only type-level gate.
+- Biome does not process markdown, so the markdown rules above remain
+  checked by hand (`testing.md`).
 - Keep pure helpers exported so they can be tested without starting pi.
   `resolveZaiKey()` in `extensions/zai-web-search.ts` is the model: it
   takes plain arguments and returns a plain value.
