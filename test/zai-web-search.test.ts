@@ -24,6 +24,17 @@ function keySettings(key: string): string {
   return JSON.stringify({ zaiWebSearch: { apiKey: key } });
 }
 
+function fileSettings(file: string): string {
+  return keySettings(`file:${file}`);
+}
+
+/** Write a file holding a key and return its path. */
+function keyFile(dir: string, name: string, content: string): string {
+  const file = join(dir, name);
+  writeFileSync(file, content);
+  return file;
+}
+
 /** A project directory. Writes `.pi/settings.json` when given content. */
 function project(settings?: string): string {
   const dir = tempDir("pi-ext-project-");
@@ -97,6 +108,65 @@ describe("resolveZaiKey", () => {
   test("accepts a settings file with a byte-order mark", () => {
     agentDir(`\uFEFF${keySettings("bom-key")}`);
     assert.equal(resolveZaiKey(), "bom-key");
+  });
+
+  test("reads the key from a file: reference", () => {
+    const agent = agentDir();
+    const file = keyFile(agent, "key", "file-key\n");
+    agentDir(fileSettings(file));
+    assert.equal(resolveZaiKey(), "file-key");
+  });
+
+  test("expands a leading ~ in a file: reference", () => {
+    const agent = agentDir();
+    keyFile(agent, "key", "tilde-key");
+    const previousHome = process.env.HOME;
+    process.env.HOME = agent;
+    try {
+      agentDir(fileSettings("~/key"));
+      assert.equal(resolveZaiKey(), "tilde-key");
+    } finally {
+      if (previousHome === undefined) delete process.env.HOME;
+      else process.env.HOME = previousHome;
+    }
+  });
+
+  test("resolves a relative file: path against the settings file", () => {
+    const agent = agentDir();
+    keyFile(agent, "key", "relative-key");
+    writeFileSync(join(agent, "settings.json"), fileSettings("key"));
+    assert.equal(resolveZaiKey(), "relative-key");
+  });
+
+  test("treats file: as a literal when it is not at the start", () => {
+    agentDir(keySettings("sk-literal-file:not-a-path"));
+    assert.equal(resolveZaiKey(), "sk-literal-file:not-a-path");
+  });
+
+  test("throws when a file: reference names a missing file", () => {
+    const agent = agentDir();
+    const missing = join(agent, "nope");
+    agentDir(fileSettings(missing));
+    assert.throws(
+      () => resolveZaiKey(),
+      (error: unknown) => {
+        assert.ok(error instanceof Error);
+        assert.ok(error.message.includes(missing));
+        return true;
+      },
+    );
+  });
+
+  test("throws when a file: reference names an empty file", () => {
+    const agent = agentDir();
+    const file = keyFile(agent, "key", "   \n");
+    agentDir(fileSettings(file));
+    assert.throws(() => resolveZaiKey(), /is empty/);
+  });
+
+  test("throws when a file: reference carries no path", () => {
+    agentDir(keySettings("file:"));
+    assert.throws(() => resolveZaiKey(), /no path after it/);
   });
 
   test("falls through a file with no zaiWebSearch section", () => {

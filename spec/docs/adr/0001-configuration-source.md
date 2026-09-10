@@ -1,7 +1,8 @@
 # ADR-0001: Key configuration source
 
 Date: 2026-09-10
-Status: accepted
+Status: accepted (revised by ADR-0008: the settings value may be a
+`file:` reference to a file holding the key; the rest still stands)
 
 ## Context
 

@@ -152,6 +152,10 @@ without starting pi. The suite covers:
 - fall-through for an absent file, a missing `zaiWebSearch` section, a
   non-string `apiKey`, a whitespace-only `apiKey`, a section that is not
   an object, and a whitespace-only environment variable
+- a `file:` reference: reading the key from the file, `~` expansion,
+  relative resolution against the settings file, a `file:` that is not at
+  the start staying literal, and the errors for a path that does not
+  exist, an empty file, and a prefix with no path
 - the error naming every source when no key is configured
 - the error naming the file when a settings file cannot be parsed
 

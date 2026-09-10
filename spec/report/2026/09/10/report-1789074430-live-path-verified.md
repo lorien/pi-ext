@@ -39,10 +39,10 @@
 
 ### Future-task notes
 
-- `[open]` The credential now lives in plaintext in a pi settings file.
-  That is the accepted design from ADR-0001 and needs no change, but the
-  file mode is not enforced by pi: an editor or a rewrite can widen it.
-  Nothing currently checks it.
+- `[acted]` The credential lived in plaintext in a pi settings file. No
+  longer: ADR-0008 puts `file:<path>` in `apiKey`, so the settings file
+  holds a reference and the secret stays in a single file. The mode of the
+  settings file no longer matters for this credential.
 - `[open]` The live check still spends one search request per run, and
   nothing runs it on a schedule or in automation.
 - `[open]` `runZaiWebSearch()` remains untestable offline because its

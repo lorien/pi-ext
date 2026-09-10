@@ -10,6 +10,11 @@
  *   2. <cwd>/.pi/settings.json       -> { "zaiWebSearch": { "apiKey": "..." } }
  *   3. <agent-dir>/settings.json     -> same shape
  *
+ * A settings `apiKey` is either the key itself, or `file:<path>` to read the
+ * key from a file. Paths follow pi's rule for settings paths: `~` and absolute
+ * paths work, and a relative path resolves against the directory holding the
+ * settings file.
+ *
  * "zaiWebSearch" is this extension's own settings key; pi parses settings.json
  * without schema validation and preserves unknown keys on write, so a custom
  * section survives normal pi usage. The agent dir is resolved with pi's own
@@ -17,7 +22,8 @@
  */
 
 import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { homedir } from "node:os";
+import { dirname, isAbsolute, join, resolve } from "node:path";
 import { StringEnum } from "@earendil-works/pi-ai";
 import {
   CONFIG_DIR_NAME,
@@ -30,6 +36,8 @@ const ENDPOINT = "https://api.z.ai/api/paas/v4/web_search";
 const REQUEST_TIMEOUT_MS = 30_000;
 const TOOL_NAME = "zai_web_search";
 const CONFIG_KEY = "zaiWebSearch";
+/** Prefix on a settings `apiKey` meaning "read the key from this file". */
+const FILE_PREFIX = "file:";
 
 const RECENCY = ["oneDay", "oneWeek", "oneMonth", "oneYear", "noLimit"] as const;
 const ENGINES = [
@@ -63,12 +71,8 @@ export type ZaiWebSearchParams = {
   engine?: (typeof ENGINES)[number];
 };
 
-/**
- * Read `zaiWebSearch.apiKey` from a pi settings file.
- * Returns undefined when the file is absent or has no key configured; throws
- * only when the file exists but cannot be parsed, since that is a real error.
- */
-function readKeyFromSettingsFile(path: string): string | undefined {
+/** A settings file's `zaiWebSearch` section, or undefined when absent. */
+function readSettingsSection(path: string): Record<string, unknown> | undefined {
   let raw: string;
   try {
     raw = readFileSync(path, "utf8");
@@ -86,9 +90,66 @@ function readKeyFromSettingsFile(path: string): string | undefined {
 
   if (typeof parsed !== "object" || parsed === null) return undefined;
   const section = (parsed as Record<string, unknown>)[CONFIG_KEY];
-  if (typeof section !== "object" || section === null) return undefined;
-  const apiKey = (section as Record<string, unknown>).apiKey;
-  return typeof apiKey === "string" && apiKey.trim() ? apiKey.trim() : undefined;
+  return typeof section === "object" && section !== null
+    ? (section as Record<string, unknown>)
+    : undefined;
+}
+
+function asNonEmptyString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+/**
+ * Resolve a configured path the way pi resolves settings paths: `~` and
+ * absolute paths are supported, and a relative path is relative to the
+ * directory holding the settings file.
+ */
+function resolveSettingsPath(value: string, settingsPath: string): string {
+  if (value === "~") return homedir();
+  if (value.startsWith("~/")) return join(homedir(), value.slice(2));
+  return isAbsolute(value) ? value : resolve(dirname(settingsPath), value);
+}
+
+/**
+ * Read the key from one settings file's `apiKey`.
+ * Returns undefined when the file is absent or configures no key; throws when
+ * the file cannot be parsed, or when `apiKey` is a `file:` reference that
+ * cannot be read.
+ */
+function readKeyFromSettingsFile(path: string): string | undefined {
+  const section = readSettingsSection(path);
+  if (!section) return undefined;
+
+  const apiKey = asNonEmptyString(section.apiKey);
+  if (!apiKey) return undefined;
+  if (!apiKey.startsWith(FILE_PREFIX)) return apiKey;
+
+  const configured = apiKey.slice(FILE_PREFIX.length).trim();
+  if (!configured) {
+    throw new Error(
+      `"${CONFIG_KEY}.apiKey" in ${path} is "${FILE_PREFIX}" with no path after it.`,
+    );
+  }
+
+  const keyPath = resolveSettingsPath(configured, path);
+  let raw: string;
+  try {
+    raw = readFileSync(keyPath, "utf8");
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Could not read the key file ${keyPath} named by "${CONFIG_KEY}.apiKey" ` +
+        `in ${path}: ${reason}`,
+    );
+  }
+  const key = raw.trim();
+  if (!key) {
+    throw new Error(
+      `The key file ${keyPath} named by "${CONFIG_KEY}.apiKey" in ${path} ` +
+        `is empty.`,
+    );
+  }
+  return key;
 }
 
 /**
@@ -112,7 +173,8 @@ export function resolveZaiKey(cwd?: string): string {
   const where = [projectSettings, globalSettings].filter(Boolean).join(" or ");
   throw new Error(
     `z.ai API key not found. Set $ZAI_API_KEY, or add ` +
-      `{ "${CONFIG_KEY}": { "apiKey": "..." } } to ${where}.`,
+      `{ "${CONFIG_KEY}": { "apiKey": "<value>" } } (or "apiKey": ` +
+      `"${FILE_PREFIX}<path>") to ${where}.`,
   );
 }
 

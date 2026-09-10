@@ -20,7 +20,9 @@ are trimmed before use.
 
 ## Settings shape
 
-Add a `zaiWebSearch` section to either settings file:
+Add a `zaiWebSearch` section to either settings file. `apiKey` accepts
+one option, whose value is either the key itself or a `file:` reference
+to a file holding it:
 
 ```json
 {
@@ -29,6 +31,26 @@ Add a `zaiWebSearch` section to either settings file:
   }
 }
 ```
+
+```json
+{
+  "zaiWebSearch": {
+    "apiKey": "file:~/.keys/zai.key"
+  }
+}
+```
+
+The `file:` form keeps the secret out of the settings file, which matters
+when settings are synced, backed up, or shared. The prefix is only
+treated as a reference at the start of the value; anything else is the
+key itself, so a literal key containing `file:` elsewhere still works.
+
+Paths follow pi's rule for settings paths: `~` and absolute paths are
+supported, and a relative path resolves against the directory holding the
+settings file. A `file:` reference that cannot be read, names an empty
+file, or carries no path is an error rather than a silent fall-through,
+because an explicitly configured path that does not work is a mistake
+worth reporting.
 
 Project settings override global settings, so a key can be scoped to one
 repository. A project that keeps a key in `.pi/settings.json` should list
