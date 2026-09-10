@@ -9,6 +9,7 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "test": "node --test \"test/*.test.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "pi": {

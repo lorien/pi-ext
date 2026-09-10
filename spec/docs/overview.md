@@ -39,6 +39,8 @@ source with no build step.
   emit is configured; the file exists for checking only.
 - `extensions/` — one TypeScript file per extension. Currently
   `zai-web-search.ts`, which provides the `zai_web_search` tool.
+- `test/` — the unit tests, run by Node's built-in test runner through
+  `npm test`. See `testing.md` and `adr/0003-test-runner.md`.
 - `skills/` — skill directories, each with a `SKILL.md`. Currently empty;
   the directory is kept by `.gitkeep` because the manifest declares it.
 - `spec/docs/` — the design documents, this knowledge base.
