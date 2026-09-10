@@ -9,6 +9,8 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
+    "check": "npm run typecheck && npm run lint && npm test && npm run check:md",
+    "check:md": "node tools/check-md.mjs",
     "format": "biome check --write .",
     "lint": "biome check .",
     "test": "node --test \"test/*.test.ts\"",
@@ -30,6 +32,9 @@
   "devDependencies": {
     "@biomejs/biome": "^2.5.13",
     "@types/node": "^22.0.0",
-    "typescript": "^7.0.2"
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "typescript": "^7.0.2",
+    "unified": "^11.0.5"
   }
 }

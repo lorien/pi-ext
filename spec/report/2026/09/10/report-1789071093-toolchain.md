@@ -32,9 +32,9 @@
 
 ### Future-task notes
 
-- `[open]` Markdown is outside Biome, so the 88-character cap and the
-  no-tables rule are still checked by hand. Revisit if Biome gains
-  Markdown support.
+- `[acted]` Markdown is outside Biome, so the 88-character cap and the
+  no-tables rule were still checked by hand. Resolved by ADR-0006:
+  `tools/check-md.mjs` now checks both, plus the heading and fence rules.
 - `[open]` The lint set is not type-aware, so promise misuse is not
   caught. Relevant only if async code beyond the single request helper is
   added; the alternative is ESLint with `typescript-eslint`.

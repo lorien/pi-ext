@@ -34,8 +34,11 @@ source with no build step.
 
 - `package.json` — pi manifest. Declares the package name, the `pi`
   extension and skill directories, the peer dependencies on pi, and the
-  development dependencies and scripts (`test`, `typecheck`, `lint`,
-  `format`).
+  development dependencies and scripts (`check`, `check:md`, `format`,
+  `lint`, `test`, `typecheck`).
+- `tools/` — repository checks that are not part of the extension.
+  `check-md.mjs` is the markdown checker; see
+  `adr/0006-markdown-checker.md`.
 - `tsconfig.json` — TypeScript configuration used by `tsc --noEmit`. No
   emit is configured; the file exists for checking only.
 - `biome.json` — the linter and formatter configuration, applied by

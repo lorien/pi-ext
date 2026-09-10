@@ -41,6 +41,12 @@ Before every commit, run the local-content check in `testing.md`.
 - Use ATX headings (`##`), with a single `#` title per document.
 - Tag fenced code blocks with a language: `bash`, `json`, `ts`, `markdown`.
 - Keep one sentence per line where practical; it keeps diffs readable.
+- Enforcement: `npm run check:md` checks the line cap, the table ban, the
+  single level-1 heading rule, and the language tag on fenced blocks. It
+  is AST-based, so a `|` inside a code fence is not mistaken for a table.
+- `spec/skills/` and `spec/report/` are exempt from the heading rule
+  only, because their structure is fixed upstream; see
+  `adr/0006-markdown-checker.md`.
 
 ## Documents
 

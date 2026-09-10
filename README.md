@@ -10,7 +10,7 @@ A [pi](https://pi.dev) package hosting custom extensions and skills.
 
 ## Layout
 
-```
+```text
 pi-ext/
 ├── package.json          # pi manifest (declares extensions + skills)
 ├── tsconfig.json

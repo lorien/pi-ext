@@ -11,9 +11,11 @@ this the first item of the final list.
   `test/**/*.ts`.
 - `npm test` — runs the unit tests.
 - `npm run lint` — runs Biome over the TypeScript and JSON files.
+- `npm run check:md` — runs the markdown checker.
 
 All must pass. `typecheck` and `lint` are expected to report nothing
-wrong, and `test` is expected to report no failures.
+wrong, and `test` is expected to report no failures. `npm run check` runs
+all four in sequence.
 
 ### Local-content check
 
@@ -51,19 +53,15 @@ the documents, and that `.gitignore` still covers the generated files.
 ### Markdown check
 
 Biome covers TypeScript and JSON, not markdown, so the markdown rules in
-`conventions.md` are checked here. Neither command may print anything:
+`conventions.md` are checked by `npm run check:md`. It parses every
+markdown file and fails on a table, a line over the cap, a file without
+exactly one leading level-1 heading, and a fenced block without a language
+tag. Run it directly, or as part of `npm run check`.
 
-```bash
-find . -name '*.md' -not -path './node_modules/*' -not -path './.git/*' \
-  -exec awk 'length > 88 {print FILENAME": "FNR}' {} +
-```
-
-```bash
-grep -rn '^|' --include='*.md' --exclude-dir=node_modules .
-```
-
-The first finds lines over the cap, the second finds tables. Note that
-markdown formatting is not auto-fixed: apply the fixes by hand.
+The checker mirrors the rules; it is not their source. When a markdown
+convention changes, update `conventions.md` first and `tools/check-md.mjs`
+in the same commit. The exemptions for `spec/skills/` and `spec/report/`
+are documented in `adr/0006-markdown-checker.md`.
 
 ## Manual smoke test
 
