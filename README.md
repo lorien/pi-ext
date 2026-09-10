@@ -34,10 +34,10 @@ Or load it without installing, for the current run only:
 pi -e ~/code/pi-ext
 ```
 
-### From Git (pinned release)
+### From Git
 
 ```bash
-pi install git:github.com/<you>/pi-ext@v0.1.0
+pi install git:github.com/<you>/pi-ext
 ```
 
 After installing, run `/reload` (or restart pi) so the extensions load.
