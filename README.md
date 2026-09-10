@@ -53,7 +53,8 @@ The key is resolved in this order:
 
 ### Via `settings.json`
 
-Add a `zaiWebSearch` section to either file:
+Add a `zaiWebSearch` section to either file. `apiKey` is either the key
+itself, or a `file:` reference to a file holding it:
 
 ```json
 {
@@ -62,6 +63,30 @@ Add a `zaiWebSearch` section to either file:
   }
 }
 ```
+
+```json
+{
+  "zaiWebSearch": {
+    "apiKey": "file:<path>"
+  }
+}
+```
+
+The `file:` form keeps the secret out of the settings file, which gets
+synced, backed up, and shared.
+
+- Only a leading `file:` starts a reference. A literal key that contains
+  `file:` elsewhere is still a literal key.
+- Paths follow pi's rule for settings paths: `~` and absolute paths work,
+  and a relative path resolves against the directory holding the settings
+  file.
+- The file is read on each tool call and its contents are trimmed, so
+  rotating the key needs no `/reload`.
+- A reference that cannot be read, names an empty file, or carries no
+  path throws with the path in the message instead of falling through to
+  the next source.
+- `$ZAI_API_KEY` is always a literal key; `file:` is settings syntax
+  only.
 
 Project settings win over global ones, so you can scope a key to a single
 repository with `.pi/settings.json` (add `.pi/` to `.gitignore` if you do

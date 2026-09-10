@@ -53,7 +53,7 @@ source with no build step.
   see `adr/0007-end-to-end-check.md`.
 - `skills/` — skill directories, each with a `SKILL.md`. Currently empty;
   the directory is kept by `.gitkeep` because the manifest declares it.
-- `spec/docs/` — the design documents, this knowledge base.
+- `spec/docs/` — the internal design documents, this knowledge base.
 - `spec/docs/adr/` — architecture decision records.
 - `spec/skills/` — the workflow files copied from the bootstrap
   procedure: `work.md`, `task_tracking.md`, `report_tracking.md`,
@@ -62,7 +62,10 @@ source with no build step.
   `spec/skills/report_tracking.md`.
 - `AGENTS.md` — the entry point for coding agents; it points at this
   directory.
-- `README.md` — the human-facing quick start.
+- `README.md` — the end-user quick start. It is the repository's only
+  end-user documentation; everything under `spec/` is internal (see
+  `conventions.md`), so end-user behavior is documented here, not
+  deferred to the design documents.
 - `LICENSE` — MIT.
 - `.gitignore` — ignores `node_modules/`, `dist/`, `package-lock.json`,
   logs, editor metadata, and `.env` files. The lockfile is excluded because

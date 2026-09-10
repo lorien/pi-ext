@@ -50,6 +50,13 @@ Before every commit, run the local-content check in `testing.md`.
 
 ## Documents
 
+- Audiences: `README.md` is the repository's only end-user documentation.
+  Everything under `spec/` is internal, written for maintainers and
+  coding agents, and end-user documents must not defer to it.
+  End-user-visible behavior — install, configuration, tool use — is
+  documented in `README.md`, and updating it is part of the
+  documentation-sync rule in `work.md`; `spec/docs/` records the fuller
+  design and reasoning behind it.
 - `spec/docs/` holds the design documents. `spec/docs/index.md` catalogs
   them and defines the reading order.
 - `spec/docs/plan.md` holds the open-task list. Its record format and

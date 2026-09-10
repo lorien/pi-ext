@@ -29,11 +29,16 @@ content unchanged.
 
 ### Future-task notes
 
-- `[open]` `README.md` is still outside the documentation sync guarantee:
+- `[acted]` `README.md` is still outside the documentation sync guarantee:
   `work.md` points at `spec/docs/`, so a change to the extension's
   parameters or configuration must be mirrored in `README.md` by hand. If
   this drifts, consider having `README.md` defer to `configuration.md` for
   the details instead of restating them.
+  Resolved the other way (owner ruling, see
+  `report-1789079636-readme-file-form.md`): `README.md` is the only
+  end-user doc and `spec/` is internal-only, so end-user behavior is
+  restated in `README.md`; the defer-to-spec idea is dropped. The sync
+  rule now extends to `README.md` via `conventions.md`.
 
 ### Tooling/process
 
