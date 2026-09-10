@@ -14,6 +14,7 @@
     "format": "biome check --write .",
     "lint": "biome check .",
     "test": "node --test \"test/*.test.ts\"",
+    "test:e2e": "node --test \"e2e/*.e2e.ts\"",
     "typecheck": "tsc --noEmit"
   },
   "pi": {

@@ -48,6 +48,9 @@ source with no build step.
   `zai-web-search.ts`, which provides the `zai_web_search` tool.
 - `test/` — the unit tests, run by Node's built-in test runner through
   `npm test`. See `testing.md` and `adr/0003-test-runner.md`.
+- `e2e/` — the live end-to-end check, run by `npm run test:e2e`. It is
+  kept out of `test/` so a bare `node --test` cannot fire real requests;
+  see `adr/0007-end-to-end-check.md`.
 - `skills/` — skill directories, each with a `SKILL.md`. Currently empty;
   the directory is kept by `.gitkeep` because the manifest declares it.
 - `spec/docs/` — the design documents, this knowledge base.

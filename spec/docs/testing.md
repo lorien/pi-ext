@@ -63,6 +63,40 @@ convention changes, update `conventions.md` first and `tools/check-md.mjs`
 in the same commit. The exemptions for `spec/skills/` and `spec/report/`
 are documented in `adr/0006-markdown-checker.md`.
 
+## End-to-end check
+
+`npm run test:e2e` runs `e2e/*.e2e.ts` against the live z.ai API. It is not
+part of `npm test` or `npm run check`, because it needs a real key, spends
+quota, and depends on the network.
+
+What it does:
+
+- Skips the live suite with a visible reason when no key is configured; it
+  does not fail. `resolveZaiKey()` makes that decision, so the same sources
+  the tool reads are what enable the check.
+- Otherwise it makes one real search with `count: 3` and asserts that
+  results come back with links, that the count is honoured, and that
+  `formatSearchResults()` renders numbered entries with indented links.
+- It also asserts that an invalid key is rejected by the live service. That
+  case needs no configured key, so it runs even when the live suite is
+  skipped, and it confirms the check is really talking to the API.
+
+Placement is deliberate: the files live in `e2e/`, not under `test/`. Node
+treats every file under a `test/` directory as a test file, so a bare
+`node --test` would run them and make real requests. A bare `node --test`
+collects only the unit suite.
+
+The positive path cannot run without a key, so it is the one part of the
+repository that is verified by hand. Run it after any change to
+`runZaiWebSearch()`, the request body, or the response handling:
+
+```bash
+npm run test:e2e
+```
+
+If it skips and a key is configured, the reason is printed next to the
+skipped suite.
+
 ## Manual smoke test
 
 The tool calls a live API, so the smoke test is manual and needs a key:
@@ -123,9 +157,9 @@ without starting pi. The suite covers:
 
 Rules for any test added here:
 
-- No network calls. Do not test the live endpoint from the suite; if
-  request-building logic needs coverage, extract it so the request can be
-  inspected without being sent.
+- No network calls, ever. The live endpoint is exercised only by the
+  end-to-end check below. If request-building logic needs coverage, extract
+  it so the request can be inspected without being sent.
 - No writes outside a temporary directory. Each test creates its own
   temporary project and agent directory and redirects
   `$PI_CODING_AGENT_DIR`, so nothing touches a real agent directory.
