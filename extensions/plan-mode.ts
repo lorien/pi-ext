@@ -123,7 +123,7 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
     ctx.ui.setStatus(
       "plan-mode",
-      enabled ? ctx.ui.theme.fg("warning", "[PLAN]") : undefined,
+      enabled ? ctx.ui.theme.fg("mdHeading", "[PLAN]") : undefined,
     );
     ctx.ui.notify(enabled ? "Plan mode enabled." : "Plan mode disabled.", "info");
   }
