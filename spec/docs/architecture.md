@@ -1,15 +1,16 @@
 # Architecture
 
-The repository currently ships one extension: `zai_web_search`, defined in
-`extensions/zai-web-search.ts`. This document describes its intended
-design.
+The repository ships two extensions: `zai_web_search`, defined in
+`extensions/zai-web-search.ts`, and plan mode, defined in
+`extensions/plan-mode.ts`. This document describes their intended design.
 
 ## Shape of an extension
 
 - An extension is a single ES module whose default export is a factory:
   `export default function (pi: ExtensionAPI) { ... }`.
-- The factory registers everything the extension provides. For this
-  extension that is exactly one tool.
+- The factory registers everything the extension provides. For
+  `zai_web_search` that is one tool; for plan mode, one command, one
+  status line, and two event hooks.
 - pi loads the file directly from `extensions/`, as declared by the `pi`
   manifest in `package.json`. There is no build step and no bundling.
 
@@ -78,3 +79,26 @@ Errors are raised as `Error` with a message that names the cause:
 
 Failures propagate to pi, which surfaces them to the user; the extension
 does not swallow them and does not retry.
+
+## Plan mode
+
+`extensions/plan-mode.ts` provides a togglable read-only mode.
+
+- One command, `/plan`, toggles it, and a keyboard shortcut registered at
+  `session_start`.
+- The shortcut comes from `planMode.shortcut` in settings, resolved by the
+  pure `resolveShortcut(cwd)` helper (project settings over global over
+  the `alt+space` default). See `adr/0010-plan-mode-shortcut-setting.md`.
+- On enable it records `pi.getActiveTools()` and sets the list without
+  `edit` and `write`; on disable it restores the recorded list. See
+  `adr/0009-plan-mode-instruction-injection.md`.
+- `before_agent_start` injects a hidden message with
+  `customType: "plan-mode-context"` while the mode is on. The system
+  prompt is not modified.
+- `context` drops messages with that `customType` while the mode is off,
+  so the instruction does not outlive the mode.
+- The footer shows a `[PLAN]` status while the mode is on.
+- State is in memory only; restart and resume both start in normal mode.
+- The pure helpers are `withoutWriteTools(active)`, which returns the
+  active tool names minus `edit` and `write`, and `resolveShortcut(cwd)`,
+  which reads the settings; both are the unit-tested seams.

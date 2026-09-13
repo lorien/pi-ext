@@ -44,8 +44,9 @@ source with no build step.
 - `biome.json` — the linter and formatter configuration, applied by
   `npm run lint` and `npm run format`. It covers TypeScript and JSON, not
   markdown. See `adr/0004-biome-for-lint-and-format.md`.
-- `extensions/` — one TypeScript file per extension. Currently
-  `zai-web-search.ts`, which provides the `zai_web_search` tool.
+- `extensions/` — one TypeScript file per extension.
+  `zai-web-search.ts` provides the `zai_web_search` tool; `plan-mode.ts`
+  adds the `/plan` read-only mode.
 - `test/` — the unit tests, run by Node's built-in test runner through
   `npm test`. See `testing.md` and `adr/0003-test-runner.md`.
 - `e2e/` — the live end-to-end check, run by `npm run test:e2e`. It is

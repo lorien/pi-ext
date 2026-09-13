@@ -7,7 +7,7 @@ them in the order below before working on the repository.
 
 1. `overview.md` — what pi-ext is, its scope, and the repository layout.
 2. `conventions.md` — markdown, document, and TypeScript rules.
-3. `architecture.md` — how the extension is built and why.
+3. `architecture.md` — how the extensions are built and why.
 4. `configuration.md` — how the z.ai API key is resolved.
 5. `testing.md` — the checks that must pass before a task is finished.
 6. `plan.md` — the open-task list.
@@ -20,7 +20,7 @@ them in the order below before working on the repository.
 - `conventions.md` — markdown, naming, TypeScript, task-record, and ADR
   conventions.
 - `architecture.md` — module boundaries, tool registration, HTTP transport,
-  and error behavior of the `zai_web_search` extension.
+  error behavior, and the plan-mode extension.
 - `configuration.md` — key resolution order, the `zaiWebSearch` settings
   shape, and why it is safe to add to pi settings.
 - `testing.md` — required checks, manual smoke test, and the intended unit

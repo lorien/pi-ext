@@ -6,6 +6,8 @@ A [pi](https://pi.dev) package hosting custom extensions and skills.
 
 - Extension `zai_web_search` — live web search via the z.ai `search-prime`
   engine, called as direct REST rather than through MCP.
+- Extension `plan-mode` — a `/plan` toggle for a read-only exploring and
+  analysis mode.
 - Skills — none yet. Skills live in [`skills/`](./skills).
 
 ## Layout
@@ -15,6 +17,7 @@ pi-ext/
 ├── package.json          # pi manifest (declares extensions + skills)
 ├── tsconfig.json
 ├── extensions/
+│   ├── plan-mode.ts
 │   └── zai-web-search.ts
 └── skills/               # each skill is a directory with a SKILL.md
 ```
@@ -120,6 +123,39 @@ If no key is found, the tool fails with a message naming both settings paths it 
 - `engine` — enum, default `search-prime`. One of `search-prime`,
   `search_pro_jina`, `search_pro`, `search_std`.
 
+## Plan mode
+
+`/plan` toggles plan mode, a read-only mode for exploring a codebase and
+agreeing on a plan before anything is changed.
+
+- While plan mode is on, the `edit` and `write` tools are disabled and a
+  hidden instruction tells the model to analyze and propose instead of
+  changing files. The footer shows `[PLAN]`.
+- Run `/plan` again to leave plan mode and restore the previous tool set.
+- The mode is in memory only: restarting pi or resuming a session starts
+  in normal mode.
+- `bash` is not restricted, so plan mode is a guardrail, not a sandbox.
+
+### Shortcut
+
+A keyboard shortcut toggles plan mode. Set it with a `planMode.shortcut`
+value in `settings.json`:
+
+```json
+{
+  "planMode": {
+    "shortcut": "alt+space"
+  }
+}
+```
+
+The default is `alt+space`. A project `.pi/settings.json` wins over the
+global `<agent-dir>/settings.json`; an absent or unusable value falls back
+to the default. The shortcut cannot be changed through `keybindings.json`,
+because extension shortcuts are not addressable there, so this setting is
+the only way to change it. Some terminals and window managers intercept
+`alt+space`; pick another key if the shortcut does nothing.
+
 ## Development
 
 ```bash
@@ -131,6 +167,7 @@ Load the working tree directly while iterating:
 
 ```bash
 pi -e ./extensions/zai-web-search.ts
+pi -e ./extensions/plan-mode.ts
 ```
 
 ## License

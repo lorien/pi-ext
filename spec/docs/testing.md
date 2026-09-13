@@ -113,6 +113,11 @@ To check only that the module loads and registers its tool, import it and
 call the default export with a stub object that records
 `registerTool`. This needs no key and no network.
 
+Plan mode needs no key. Load it with `pi -e ./extensions/plan-mode.ts`,
+run `/plan`, and confirm that `edit` and `write` drop out of the active
+tools and the `[PLAN]` status appears; run `/plan` again and confirm both
+are restored.
+
 ## Unit tests
 
 The suite runs on the test runner built into Node; the choice and its
@@ -139,8 +144,8 @@ Facts that matter when adding tests:
 - `npm run typecheck` covers `test/**/*.ts` as well as the extension, so
   the tests are type-checked too.
 
-`resolveZaiKey()` is the subject, because it is pure enough to test
-without starting pi. The suite covers:
+`resolveZaiKey()` and `withoutWriteTools()` are the subjects, because
+they are pure enough to test without starting pi. The z.ai suite covers:
 
 - the environment key, including trimming, and that it wins over both
   settings files
@@ -158,6 +163,17 @@ without starting pi. The suite covers:
   exist, an empty file, and a prefix with no path
 - the error naming every source when no key is configured
 - the error naming the file when a settings file cannot be parsed
+
+The plan-mode suite covers `withoutWriteTools()`: removal of `edit` and
+`write` with the other tools' order preserved, a no-op when neither is
+active, exact-name matching, and the empty list. It also covers
+`resolveShortcut()`: the project setting winning over the global one, the
+global fallback, trimming, the `alt+space` default, fall-through for a
+missing section, a non-string value, a whitespace-only value, a section
+that is not an object, and unparseable JSON. The rest of the extension —
+the command handler, the `session_start` shortcut registration, the
+`before_agent_start` injection, and the `context` filter — is wired to pi
+state and has no unit test.
 
 Rules for any test added here:
 
