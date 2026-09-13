@@ -4,7 +4,7 @@
  * `/plan` toggles plan mode. While it is on:
  *   - the `edit` and `write` tools are removed from the active tool set,
  *   - a hidden instruction is injected into the conversation before each
- *     turn,
+ *     agent run,
  *   - the footer shows a `[PLAN]` status.
  *
  * The instruction is injected as a conversation message, not as a

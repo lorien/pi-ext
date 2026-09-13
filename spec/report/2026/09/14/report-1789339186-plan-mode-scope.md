@@ -18,6 +18,11 @@
 - Landed the previously uncommitted plan-mode extension work as its own
   commit before this fix, so the history separates the feature from the
   correction.
+- Corrected the source file-header comment: the instruction is injected
+  before each agent run (once per user prompt), not before each turn.
+  This matches pi's definition of a turn as one LLM response plus its
+  tool calls, so a single run can contain many turns that are not
+  re-injected.
 
 ### Spec/ADR amendments
 
