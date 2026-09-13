@@ -129,8 +129,9 @@ If no key is found, the tool fails with a message naming both settings paths it 
 agreeing on a plan before anything is changed.
 
 - While plan mode is on, the `edit` and `write` tools are disabled and a
-  hidden instruction tells the model to analyze and propose instead of
-  changing files. The footer shows `[PLAN]`.
+  hidden instruction tells the model to answer the request as scoped and
+  propose changes only when the user asked for them. The footer shows
+  `[PLAN]`.
 - Run `/plan` again to leave plan mode and restore the previous tool set.
 - The mode is in memory only: restarting pi or resuming a session starts
   in normal mode.

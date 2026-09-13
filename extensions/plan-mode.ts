@@ -51,8 +51,13 @@ const PLAN_INSTRUCTION = [
   "Do not modify any file in the project; the edit and write tools are",
   "disabled. This restriction applies to all following turns; changes made",
   "earlier in the conversation are already done. Read and search the code as",
-  "needed, then analyze the user's request and propose the changes you would",
-  "make to fulfill it. If something is unclear, ask the user clarifying",
+  "needed, then answer the user's request.",
+  "Match the scope of the request. If it asks for an explanation, analysis,",
+  "a list, or a comparison, give only that and stop. Do not append a change",
+  "proposal, implementation plan, task record, or design decision unless the",
+  "user asked for changes or for a plan. If you believe a change is warranted",
+  "but none was requested, say so in one sentence and ask whether the user",
+  "wants a proposal. If something is unclear, ask the user clarifying",
   "questions before proposing.",
 ].join(" ");
 
