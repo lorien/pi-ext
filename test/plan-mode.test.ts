@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, test } from "node:test";
 
 import {
   DEFAULT_SHORTCUT,
+  loadPlanInstruction,
   resolveShortcut,
   withoutWriteTools,
 } from "../extensions/plan-mode.ts";
@@ -79,6 +80,43 @@ describe("withoutWriteTools", () => {
 
   test("returns an empty list unchanged", () => {
     assert.deepEqual(withoutWriteTools([]), []);
+  });
+});
+
+describe("loadPlanInstruction", () => {
+  function promptFile(content: string): string {
+    const path = join(tempDir("pi-ext-prompt-"), "plan-mode-prompt.txt");
+    writeFileSync(path, content);
+    return path;
+  }
+
+  test("returns the file content with surrounding whitespace trimmed", () => {
+    const path = promptFile("\n  be careful  \n");
+    assert.equal(loadPlanInstruction(path), "be careful");
+  });
+
+  test("strips a byte-order mark", () => {
+    assert.equal(loadPlanInstruction(promptFile("\uFEFFbe careful")), "be careful");
+  });
+
+  test("throws naming the path when the file is missing", () => {
+    const path = join(tempDir("pi-ext-missing-"), "plan-mode-prompt.txt");
+    assert.throws(
+      () => loadPlanInstruction(path),
+      (error: unknown) => {
+        return error instanceof Error && error.message.includes(path);
+      },
+    );
+  });
+
+  test("throws naming the path when the file is blank", () => {
+    const path = promptFile("   \n\t\n");
+    assert.throws(
+      () => loadPlanInstruction(path),
+      (error: unknown) => {
+        return error instanceof Error && error.message.includes(path);
+      },
+    );
   });
 });
 

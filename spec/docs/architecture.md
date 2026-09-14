@@ -95,10 +95,14 @@ does not swallow them and does not retry.
 - `before_agent_start` injects a hidden message with
   `customType: "plan-mode-context"` while the mode is on. The system
   prompt is not modified.
+- The injected text is read at load from `extensions/plan-mode-prompt.txt`
+  beside the module; a missing or blank file fails the extension load
+  instead of injecting nothing. See `adr/0011-plan-mode-prompt-file.md`.
 - `context` drops messages with that `customType` while the mode is off,
   so the instruction does not outlive the mode.
 - The footer shows a `[PLAN]` status while the mode is on.
 - State is in memory only; restart and resume both start in normal mode.
 - The pure helpers are `withoutWriteTools(active)`, which returns the
-  active tool names minus `edit` and `write`, and `resolveShortcut(cwd)`,
-  which reads the settings; both are the unit-tested seams.
+  active tool names minus `edit` and `write`; `loadPlanInstruction(path)`,
+  which reads and trims the prompt file; and `resolveShortcut(cwd)`,
+  which reads the settings. They are the unit-tested seams.

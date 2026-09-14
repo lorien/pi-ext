@@ -17,6 +17,7 @@ pi-ext/
 ├── package.json          # pi manifest (declares extensions + skills)
 ├── tsconfig.json
 ├── extensions/
+│   ├── plan-mode-prompt.txt
 │   ├── plan-mode.ts
 │   └── zai-web-search.ts
 └── skills/               # each skill is a directory with a SKILL.md
@@ -129,9 +130,13 @@ If no key is found, the tool fails with a message naming both settings paths it 
 agreeing on a plan before anything is changed.
 
 - While plan mode is on, the `edit` and `write` tools are disabled and a
-  hidden instruction tells the model to answer the request as scoped and
-  propose changes only when the user asked for them. The footer shows
-  `[PLAN]`.
+  hidden instruction tells the model it is in a read-only phase and should
+  research the request and build a plan, asking clarifying questions
+  before proposing. The footer shows `[PLAN]`.
+- The instruction text is read from
+  [`./extensions/plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt)
+  at load; edit that file to change what plan mode tells the model. A
+  missing or blank file stops the extension from loading.
 - Run `/plan` again to leave plan mode and restore the previous tool set.
 - The mode is in memory only: restarting pi or resuming a session starts
   in normal mode.

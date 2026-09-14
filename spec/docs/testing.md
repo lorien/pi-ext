@@ -170,10 +170,12 @@ active, exact-name matching, and the empty list. It also covers
 `resolveShortcut()`: the project setting winning over the global one, the
 global fallback, trimming, the `alt+space` default, fall-through for a
 missing section, a non-string value, a whitespace-only value, a section
-that is not an object, and unparseable JSON. The rest of the extension —
-the command handler, the `session_start` shortcut registration, the
-`before_agent_start` injection, and the `context` filter — is wired to pi
-state and has no unit test.
+that is not an object, and unparseable JSON. It also covers
+`loadPlanInstruction()`: returning the trimmed contents, stripping a
+byte-order mark, and throwing on a missing or a blank file. The rest of
+the extension — the command handler, the `session_start` shortcut
+registration, the `before_agent_start` injection, and the `context`
+filter — is wired to pi state and has no unit test.
 
 Rules for any test added here:
 

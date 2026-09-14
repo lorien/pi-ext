@@ -13,6 +13,11 @@
  * plan mode is off, the `context` hook drops that message again so a stale
  * instruction cannot steer later turns.
  *
+ * The instruction text lives in `plan-mode-prompt.txt` beside this module, so
+ * it can be edited without touching the TypeScript. It is read at load; a
+ * missing or blank file fails the extension load rather than injecting
+ * nothing.
+ *
  * The toggle is also a keyboard shortcut, configurable through a
  * `planMode.shortcut` setting because extension shortcuts cannot be remapped
  * through `keybindings.json`. The default is `alt+space`.
@@ -22,6 +27,7 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   CONFIG_DIR_NAME,
   type ExtensionAPI,
@@ -45,21 +51,34 @@ const SHORTCUT_KEY = "shortcut";
 /** Tools removed from the active set while plan mode is on. */
 const WRITE_TOOLS = ["edit", "write"];
 
+/** File holding the instruction injected while plan mode is on. */
+const PLAN_PROMPT_FILE = fileURLToPath(
+  new URL("./plan-mode-prompt.txt", import.meta.url),
+);
+
 /** Instruction injected as a hidden message while plan mode is on. */
-const PLAN_INSTRUCTION = [
-  "You are in plan mode, a read-only mode for exploring and analysis.",
-  "Do not modify any file in the project; the edit and write tools are",
-  "disabled. This restriction applies to all following turns; changes made",
-  "earlier in the conversation are already done. Read and search the code as",
-  "needed, then answer the user's request.",
-  "Match the scope of the request. If it asks for an explanation, analysis,",
-  "a list, or a comparison, give only that and stop. Do not append a change",
-  "proposal, implementation plan, task record, or design decision unless the",
-  "user asked for changes or for a plan. If you believe a change is warranted",
-  "but none was requested, say so in one sentence and ask whether the user",
-  "wants a proposal. If something is unclear, ask the user clarifying",
-  "questions before proposing.",
-].join(" ");
+const PLAN_INSTRUCTION = loadPlanInstruction(PLAN_PROMPT_FILE);
+
+/**
+ * Read the plan-mode instruction from `path`, trimmed. Throws when the file
+ * cannot be read or holds only whitespace: an injection with no instruction
+ * would leave the mode without guidance.
+ */
+export function loadPlanInstruction(path: string): string {
+  let raw: string;
+  try {
+    raw = readFileSync(path, "utf8");
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : String(error);
+    throw new Error(`Plan mode instruction unreadable: ${path} (${reason})`);
+  }
+
+  const instruction = raw.replace(/^\uFEFF/, "").trim();
+  if (!instruction) {
+    throw new Error(`Plan mode instruction is empty: ${path}`);
+  }
+  return instruction;
+}
 
 /** `active` without the write tools, preserving order. */
 export function withoutWriteTools(active: string[]): string[] {

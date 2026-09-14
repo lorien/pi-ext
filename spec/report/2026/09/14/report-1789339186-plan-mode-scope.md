@@ -30,18 +30,17 @@
   was a defect in the instruction, not an accepted decision, and
   `conventions.md` says a known defect must not be recorded as a design
   decision. ADR-0009 records the injection mechanism, which is unchanged.
-- `[open]` `spec/docs/architecture.md` and `spec/docs/testing.md`
-  describe plan mode but do not quote the instruction, so they stayed
-  accurate. If the instruction's contract grows (for example, named
-  request types), record that in `architecture.md`.
+- `[acted]` `spec/docs/architecture.md` and `spec/docs/testing.md`
+  now name the instruction's source file and the loader that reads it
+  (ADR-0011); the prompt text itself stays outside the documents.
 
 ### Future-task notes
 
-- `[open]` The request-type distinction lives only in prose. The
-  instruction is a module constant that is not exported, and a unit test
-  would assert exact wording, which is brittle. The behavior is therefore
-  verified by reading and by use, not by the suite. An analysis/plan
-  sub-mode would give it a testable seam.
+- `[acted]` The instruction moved to `extensions/plan-mode-prompt.txt`,
+  read through the exported `loadPlanInstruction()` helper, and the suite
+  tests the loader rather than the wording. The request-type scoping
+  paragraph was dropped when the prompt was replaced, so that prose
+  distinction no longer exists.
 - `[open]` The wording constrains the model but cannot guarantee it. The
   read-only tool set is the hard enforcement; the instruction is guidance
   and can still be ignored.
