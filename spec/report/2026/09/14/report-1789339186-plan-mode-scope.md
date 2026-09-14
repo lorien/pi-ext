@@ -36,11 +36,10 @@
 
 ### Future-task notes
 
-- `[acted]` The instruction moved to `extensions/plan-mode-prompt.txt`,
-  read through the exported `loadPlanInstruction()` helper, and the suite
-  tests the loader rather than the wording. The request-type scoping
-  paragraph was dropped when the prompt was replaced, so that prose
-  distinction no longer exists.
+- `[open]` The request-type distinction lives only in prose in
+  `extensions/plan-mode-prompt.txt`. The suite tests the loader, not the
+  wording, so the behavior is verified by reading and by use. An
+  analysis/plan sub-mode would give it a testable seam.
 - `[open]` The wording constrains the model but cannot guarantee it. The
   read-only tool set is the hard enforcement; the instruction is guidance
   and can still be ignored.

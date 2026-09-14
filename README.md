@@ -130,9 +130,9 @@ If no key is found, the tool fails with a message naming both settings paths it 
 agreeing on a plan before anything is changed.
 
 - While plan mode is on, the `edit` and `write` tools are disabled and a
-  hidden instruction tells the model it is in a read-only phase and should
-  research the request and build a plan, asking clarifying questions
-  before proposing. The footer shows `[PLAN]`.
+  hidden instruction tells the model it is in a read-only phase and must
+  answer the request as asked — a plan is appended only when the user
+  asked for a change or for a plan. The footer shows `[PLAN]`.
 - The instruction text is read from
   [`./extensions/plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt)
   at load; edit that file to change what plan mode tells the model. A

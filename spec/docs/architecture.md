@@ -93,8 +93,10 @@ does not swallow them and does not retry.
   `edit` and `write`; on disable it restores the recorded list. See
   `adr/0009-plan-mode-instruction-injection.md`.
 - `before_agent_start` injects a hidden message with
-  `customType: "plan-mode-context"` while the mode is on. The system
-  prompt is not modified.
+  `customType: "plan-mode-context"` while the mode is on. The message
+  states the read-only restriction and scopes the reply to the request: a
+  proposal or plan follows only when the user asked for a change or a
+  plan. The system prompt is not modified.
 - The injected text is read at load from `extensions/plan-mode-prompt.txt`
   beside the module; a missing or blank file fails the extension load
   instead of injecting nothing. See `adr/0011-plan-mode-prompt-file.md`.

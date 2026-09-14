@@ -17,9 +17,11 @@
   `README.md`.
 - `npm run check` passes: 40 tests, and typecheck, lint, and the markdown
   checker report nothing wrong. Both local-content greps are clean.
-- Behavior note: the replacement prompt drops the request-type scoping
-  paragraph added on 2026-09-14, so plan mode again asks unconditionally
-  for a well-researched plan. The README bullet was updated to match.
+- The owner-supplied prompt was stored with two edits: "delegate explore
+  agents" became "inspect the project" (pi ships no sub-agents), and the
+  request-scoping paragraph from the 2026-09-14 fix was restored after a
+  follow-up review, so plan mode still answers a question without
+  appending a plan.
 
 ### Spec/ADR amendments
 
