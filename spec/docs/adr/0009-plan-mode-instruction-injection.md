@@ -61,3 +61,9 @@ prompt is never modified.
   injection must stay in step.
 - Removing the tools leaves `bash` available, so plan mode does not stop
   writes made through the shell. That is a known limit of this decision.
+- (2026-09-19, ADR-0012) The cache claim in the Context above holds only
+  for the enable-time append at the transition point; the disable-time
+  removal invalidates the cached prefix from the earliest removed
+  message. ADR-0012 stages the transitions at run boundaries, injects
+  one message per mode change instead of one per prompt, and adds the
+  off-notice.

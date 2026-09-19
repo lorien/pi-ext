@@ -47,7 +47,8 @@ source with no build step.
 - `extensions/` — one TypeScript file per extension, plus any data file
   the extension reads at load. `zai-web-search.ts` provides the
   `zai_web_search` tool; `plan-mode.ts` adds the `/plan` read-only mode
-  and reads its instruction text from `plan-mode-prompt.txt` beside it.
+  and reads its message texts from `plan-mode-prompt.txt` and
+  `plan-mode-off-prompt.txt` beside it.
 - `test/` — the unit tests, run by Node's built-in test runner through
   `npm test`. See `testing.md` and `adr/0003-test-runner.md`.
 - `e2e/` — the live end-to-end check, run by `npm run test:e2e`. It is

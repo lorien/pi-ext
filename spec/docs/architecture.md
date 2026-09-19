@@ -89,22 +89,36 @@ does not swallow them and does not retry.
 - The shortcut comes from `planMode.shortcut` in settings, resolved by the
   pure `resolveShortcut(cwd)` helper (project settings over global over
   the `alt+space` default). See `adr/0010-plan-mode-shortcut-setting.md`.
-- On enable it records `pi.getActiveTools()` and sets the list without
-  `edit` and `write`; on disable it restores the recorded list. See
-  `adr/0009-plan-mode-instruction-injection.md`.
-- `before_agent_start` injects a hidden message with
-  `customType: "plan-mode-context"` while the mode is on. The message
+- The mode is staged: the toggle records the *desired* mode and updates
+  the footer, and `before_agent_start` moves it into the *applied* mode.
+  A run always executes under the mode it started with, so a mid-run
+  toggle changes nothing for the running agent, and a toggle reversed
+  before the next prompt collapses to no transition. See
+  `adr/0012-plan-mode-staged-transitions.md`, which extends the
+  message-injection decision of `adr/0009-plan-mode-instruction-injection.md`.
+- Applying a transition swaps the tool set — recording the active tools
+  and removing `edit` and `write` to enable, restoring the recorded list
+  to disable — and injects exactly one hidden message: the read-only
+  instruction (`customType: "plan-mode-context"`) on enable, and an
+  off-notice (`customType: "plan-mode-off"`) on disable. The on-instruction
   states the read-only restriction and scopes the reply to the request: a
   proposal or plan follows only when the user asked for a change or a
-  plan. The system prompt is not modified.
-- The injected text is read at load from `extensions/plan-mode-prompt.txt`
-  beside the module; a missing or blank file fails the extension load
-  instead of injecting nothing. See `adr/0011-plan-mode-prompt-file.md`.
-- `context` drops messages with that `customType` while the mode is off,
-  so the instruction does not outlive the mode.
-- The footer shows a `[PLAN]` status while the mode is on.
+  plan. The off-notice tells the model the mode is lifted and that an
+  instruction to act should be executed. The system prompt is not
+  modified.
+- Both message texts are read at load from `plan-mode-prompt.txt` and
+  `plan-mode-off-prompt.txt` beside the module; a missing or blank file
+  fails the extension load instead of injecting nothing. See
+  `adr/0011-plan-mode-prompt-file.md`.
+- `context` is keyed on the applied mode and drops the message type that
+  contradicts it: the read-only instruction while the mode is off, the
+  off-notice while it is on. A mode message does not outlive its mode.
+- The footer shows `[PLAN]` once a mode is applied and `[~PLAN]` while a
+  toggle is waiting for the next prompt.
 - State is in memory only; restart and resume both start in normal mode.
-- The pure helpers are `withoutWriteTools(active)`, which returns the
-  active tool names minus `edit` and `write`; `loadPlanInstruction(path)`,
-  which reads and trims the prompt file; and `resolveShortcut(cwd)`,
-  which reads the settings. They are the unit-tested seams.
+- The pure helpers are the unit-tested seams: `withoutWriteTools(active)`
+  returns the active tool names minus `edit` and `write`;
+  `resolveTransition(desired, applied)` decides the next transition;
+  `statusLabel(desired, applied)` renders the footer label;
+  `loadPlanInstruction(path)` reads and trims a prompt file; and
+  `resolveShortcut(cwd)` reads the settings.

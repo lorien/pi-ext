@@ -113,10 +113,14 @@ To check only that the module loads and registers its tool, import it and
 call the default export with a stub object that records
 `registerTool`. This needs no key and no network.
 
-Plan mode needs no key. Load it with `pi -e ./extensions/plan-mode.ts`,
-run `/plan`, and confirm that `edit` and `write` drop out of the active
-tools and the `[PLAN]` status appears; run `/plan` again and confirm both
-are restored.
+Plan mode needs no key. Load it with `pi -e ./extensions/plan-mode.ts`.
+Run `/plan` and confirm the `[~PLAN]` status appears immediately; send a
+prompt and confirm that `edit` and `write` drop out of the active tools,
+the status settles to `[PLAN]`, and the reply stays read-only. Run
+`/plan` again and confirm the `[~PLAN]` status shows, that a still
+running agent is untouched, and that the next prompt restores both tools
+and answers as an agent free to act. Toggle twice without a prompt in
+between and confirm nothing changes.
 
 ## Unit tests
 
@@ -172,10 +176,16 @@ global fallback, trimming, the `alt+space` default, fall-through for a
 missing section, a non-string value, a whitespace-only value, a section
 that is not an object, and unparseable JSON. It also covers
 `loadPlanInstruction()`: returning the trimmed contents, stripping a
-byte-order mark, and throwing on a missing or a blank file. The rest of
-the extension — the command handler, the `session_start` shortcut
-registration, the `before_agent_start` injection, and the `context`
-filter — is wired to pi state and has no unit test.
+byte-order mark, and throwing on a missing or a blank file. It also
+covers `resolveTransition()`: the enable and disable transitions, `none`
+while the desired and applied modes agree, and a toggle reversed before
+a run collapsing to `none`. It also covers `statusLabel()`: `[PLAN]` once
+a mode is applied, `[~PLAN]` while a toggle is pending, and unset in
+normal mode. It also asserts that both shipped prompt files load with
+content. The rest of the extension — the command and shortcut toggle,
+the `session_start` shortcut registration, the `before_agent_start`
+application, and the `context` filter — is wired to pi state and has no
+unit test.
 
 Rules for any test added here:
 

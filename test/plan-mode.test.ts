@@ -3,11 +3,14 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   DEFAULT_SHORTCUT,
   loadPlanInstruction,
   resolveShortcut,
+  resolveTransition,
+  statusLabel,
   withoutWriteTools,
 } from "../extensions/plan-mode.ts";
 
@@ -117,6 +120,81 @@ describe("loadPlanInstruction", () => {
         return error instanceof Error && error.message.includes(path);
       },
     );
+  });
+});
+
+describe("resolveTransition", () => {
+  test("reports none while the modes agree (off)", () => {
+    assert.deepEqual(resolveTransition(false, false), {
+      transition: "none",
+      appliedOn: false,
+    });
+  });
+
+  test("reports none while the modes agree (on)", () => {
+    assert.deepEqual(resolveTransition(true, true), {
+      transition: "none",
+      appliedOn: true,
+    });
+  });
+
+  test("reports enable when the mode is desired but not applied", () => {
+    assert.deepEqual(resolveTransition(true, false), {
+      transition: "enable",
+      appliedOn: true,
+    });
+  });
+
+  test("reports disable when the mode is applied but no longer desired", () => {
+    assert.deepEqual(resolveTransition(false, true), {
+      transition: "disable",
+      appliedOn: false,
+    });
+  });
+
+  test("a toggle reversed before a run collapses to no transition", () => {
+    // The enable is resolved but not applied; the second toggle lands
+    // before any run starts, so the net change is none.
+    assert.equal(resolveTransition(true, false).transition, "enable");
+    assert.deepEqual(resolveTransition(false, false), {
+      transition: "none",
+      appliedOn: false,
+    });
+  });
+});
+
+describe("statusLabel", () => {
+  test("is unset in normal mode with nothing pending", () => {
+    assert.equal(statusLabel(false, false), undefined);
+  });
+
+  test("is [PLAN] once the mode is applied", () => {
+    assert.equal(statusLabel(true, true), "[PLAN]");
+  });
+
+  test("is [~PLAN] while enabling is pending", () => {
+    assert.equal(statusLabel(true, false), "[~PLAN]");
+  });
+
+  test("is [~PLAN] while the mode is on but a lift is pending", () => {
+    assert.equal(statusLabel(false, true), "[~PLAN]");
+  });
+});
+
+describe("shipped prompt files", () => {
+  const onFile = fileURLToPath(
+    new URL("../extensions/plan-mode-prompt.txt", import.meta.url),
+  );
+  const offFile = fileURLToPath(
+    new URL("../extensions/plan-mode-off-prompt.txt", import.meta.url),
+  );
+
+  test("the on-instruction file loads with content", () => {
+    assert.ok(loadPlanInstruction(onFile).length > 0);
+  });
+
+  test("the off-notice file loads with content", () => {
+    assert.ok(loadPlanInstruction(offFile).length > 0);
   });
 });
 

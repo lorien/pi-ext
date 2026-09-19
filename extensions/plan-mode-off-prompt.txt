@@ -1,0 +1,8 @@
+# Plan Mode - System Reminder
+
+Plan mode is now OFF. The `edit` and `write` tools are enabled and you may
+modify the project.
+
+If the user's request is an instruction to act, execute it now instead of
+proposing or refining another plan. Do not restate a plan unless the user
+asks for one.

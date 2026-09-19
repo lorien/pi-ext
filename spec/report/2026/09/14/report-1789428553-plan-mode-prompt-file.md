@@ -44,10 +44,14 @@
   a second place to update.
 - `[open]` Only the loader is tested; the `before_agent_start` injection
   and the `context` filter remain wired to pi state, as before.
+  (2026-09-19: both shipped prompt files also have explicit load tests;
+  the application and filter remain untested.)
 
 ### Tooling/process
 
-- `[open]` The shipped prompt file is covered only implicitly: importing
+- `[acted]` The shipped prompt file is covered only implicitly: importing
   the module runs the loader against the real file, so a broken file
   fails the whole suite. An explicit test asserting the shipped file
-  loads would turn that into designed coverage.
+  loads would turn that into designed coverage. (2026-09-19: the
+  plan-mode suite now asserts both shipped prompt files load with
+  content.)

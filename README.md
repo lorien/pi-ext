@@ -17,6 +17,7 @@ pi-ext/
 ├── package.json          # pi manifest (declares extensions + skills)
 ├── tsconfig.json
 ├── extensions/
+│   ├── plan-mode-off-prompt.txt
 │   ├── plan-mode-prompt.txt
 │   ├── plan-mode.ts
 │   └── zai-web-search.ts
@@ -129,15 +130,29 @@ If no key is found, the tool fails with a message naming both settings paths it 
 `/plan` toggles plan mode, a read-only mode for exploring a codebase and
 agreeing on a plan before anything is changed.
 
+- Toggling records the change and updates the footer right away, but the
+  tool set and the injected message change only when your next prompt
+  starts a run. A run always works under the mode it started with, so
+  toggling mid-run never pulls tools or instructions out from under the
+  running agent, and toggling twice without a prompt in between changes
+  nothing at all.
 - While plan mode is on, the `edit` and `write` tools are disabled and a
   hidden instruction tells the model it is in a read-only phase and must
   answer the request as asked — a plan is appended only when the user
-  asked for a change or for a plan. The footer shows `[PLAN]`.
-- The instruction text is read from
-  [`./extensions/plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt)
-  at load; edit that file to change what plan mode tells the model. A
-  missing or blank file stops the extension from loading.
-- Run `/plan` again to leave plan mode and restore the previous tool set.
+  asked for a change or for a plan.
+- Leaving plan mode injects a one-time hidden notice that the mode is off
+  and the write tools are back, so the model knows it may act instead of
+  proposing yet another plan.
+- One message is injected per mode change, not per prompt, so the
+  instruction is never repeated through the session.
+- The footer shows `[PLAN]` once a mode is applied and `[~PLAN]` while a
+  toggle is waiting for your next prompt.
+- Both message texts are read at load from files beside the module:
+  [`plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt) for the
+  on-instruction and
+  [`plan-mode-off-prompt.txt`](./extensions/plan-mode-off-prompt.txt)
+  for the off-notice. Edit either file to change what plan mode tells the
+  model; a missing or blank file stops the extension from loading.
 - The mode is in memory only: restarting pi or resuming a session starts
   in normal mode.
 - `bash` is not restricted, so plan mode is a guardrail, not a sandbox.

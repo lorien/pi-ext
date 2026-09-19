@@ -1,28 +1,37 @@
 /**
  * Plan mode — a togglable read-only mode.
  *
- * `/plan` toggles plan mode. While it is on:
- *   - the `edit` and `write` tools are removed from the active tool set,
- *   - a hidden instruction is injected into the conversation before each
- *     agent run,
- *   - the footer shows a `[PLAN]` status.
+ * `/plan` toggles plan mode. The toggle records the *desired* mode and
+ * updates the footer; it never touches the tool set or the conversation.
+ * The change is applied at the next `before_agent_start`, so a run always
+ * executes under the mode it started with and a mid-run toggle cannot
+ * change tools or instructions for the running agent. A toggle reversed
+ * before the next prompt collapses to no transition at all.
  *
- * The instruction is injected as a conversation message, not as a
- * system-prompt change, so it sits at the point in history where plan mode
- * began instead of floating above the turns it is meant to constrain. While
- * plan mode is off, the `context` hook drops that message again so a stale
- * instruction cannot steer later turns.
+ * Applying a transition swaps the active tool set — recording the previous
+ * list and removing `edit` and `write` to enable the mode, restoring the
+ * recorded list to disable it — and injects exactly one hidden message:
+ * the read-only instruction when the mode turns on, a short notice that
+ * the mode is off when it turns off. One message per mode change, never
+ * one per prompt, so the instruction does not pile up in the session.
  *
- * The instruction text lives in `plan-mode-prompt.txt` beside this module, so
- * it can be edited without touching the TypeScript. It is read at load; a
- * missing or blank file fails the extension load rather than injecting
- * nothing.
+ * The `context` hook is keyed on the *applied* mode and drops the message
+ * type that contradicts it: while the mode is off, the read-only
+ * instruction is filtered out of every request; while it is on, the
+ * off-notice is. A mode message therefore never outlives its mode.
+ *
+ * Both message texts live in sibling files read at load; a missing or
+ * blank file fails the extension load rather than injecting nothing.
+ *
+ * The footer shows `[PLAN]` once a mode is applied and `[~PLAN]` while a
+ * toggle is waiting for the next prompt.
  *
  * The toggle is also a keyboard shortcut, configurable through a
- * `planMode.shortcut` setting because extension shortcuts cannot be remapped
- * through `keybindings.json`. The default is `alt+space`.
+ * `planMode.shortcut` setting because extension shortcuts cannot be
+ * remapped through `keybindings.json`. The default is `alt+space`.
  *
- * State is in memory only: a restart or session resume starts in normal mode.
+ * State is in memory only: a restart or session resume starts in normal
+ * mode.
  */
 
 import { readFileSync } from "node:fs";
@@ -38,8 +47,11 @@ import {
 /** The key type `pi.registerShortcut()` accepts. */
 type ShortcutKey = Parameters<ExtensionAPI["registerShortcut"]>[0];
 
-/** customType identifying this extension's injected context message. */
+/** customType identifying this extension's on-instruction message. */
 export const PLAN_CONTEXT_TYPE = "plan-mode-context";
+
+/** customType identifying this extension's off-notice message. */
+export const PLAN_OFF_TYPE = "plan-mode-off";
 
 /** Shortcut used when no `planMode.shortcut` is configured. */
 export const DEFAULT_SHORTCUT = "alt+space";
@@ -51,17 +63,25 @@ const SHORTCUT_KEY = "shortcut";
 /** Tools removed from the active set while plan mode is on. */
 const WRITE_TOOLS = ["edit", "write"];
 
-/** File holding the instruction injected while plan mode is on. */
+/** File holding the instruction injected when plan mode turns on. */
 const PLAN_PROMPT_FILE = fileURLToPath(
   new URL("./plan-mode-prompt.txt", import.meta.url),
 );
 
-/** Instruction injected as a hidden message while plan mode is on. */
+/** File holding the notice injected when plan mode turns off. */
+const PLAN_OFF_PROMPT_FILE = fileURLToPath(
+  new URL("./plan-mode-off-prompt.txt", import.meta.url),
+);
+
+/** Instruction injected as a hidden message when plan mode turns on. */
 const PLAN_INSTRUCTION = loadPlanInstruction(PLAN_PROMPT_FILE);
 
+/** Notice injected as a hidden message when plan mode turns off. */
+const PLAN_OFF_INSTRUCTION = loadPlanInstruction(PLAN_OFF_PROMPT_FILE);
+
 /**
- * Read the plan-mode instruction from `path`, trimmed. Throws when the file
- * cannot be read or holds only whitespace: an injection with no instruction
+ * Read a plan-mode prompt from `path`, trimmed. Throws when the file
+ * cannot be read or holds only whitespace: an injection with no text
  * would leave the mode without guidance.
  */
 export function loadPlanInstruction(path: string): string {
@@ -83,6 +103,41 @@ export function loadPlanInstruction(path: string): string {
 /** `active` without the write tools, preserving order. */
 export function withoutWriteTools(active: string[]): string[] {
   return active.filter((name) => !WRITE_TOOLS.includes(name));
+}
+
+/** A mode transition to apply at the next run boundary. */
+export type ModeTransition = "enable" | "disable" | "none";
+
+/**
+ * The transition implied by the desired and applied modes, plus the
+ * applied mode afterwards. A toggle reversed before the next run
+ * collapses to `"none"`, so the model is only ever told about the net
+ * change.
+ */
+export function resolveTransition(
+  desiredOn: boolean,
+  appliedOn: boolean,
+): { transition: ModeTransition; appliedOn: boolean } {
+  if (desiredOn === appliedOn) {
+    return { transition: "none", appliedOn };
+  }
+  return {
+    transition: desiredOn ? "enable" : "disable",
+    appliedOn: desiredOn,
+  };
+}
+
+/**
+ * The footer label for the mode: `[PLAN]` when a mode is applied,
+ * `[~PLAN]` while a toggle is waiting for the next prompt, and nothing
+ * in normal mode with nothing pending.
+ */
+export function statusLabel(
+  desiredOn: boolean,
+  appliedOn: boolean,
+): string | undefined {
+  if (!desiredOn && !appliedOn) return undefined;
+  return desiredOn === appliedOn ? "[PLAN]" : "[~PLAN]";
 }
 
 /** The `planMode.shortcut` value in one settings file, or undefined. */
@@ -124,60 +179,81 @@ export function resolveShortcut(cwd: string): string {
 }
 
 export default function planModeExtension(pi: ExtensionAPI): void {
-  let enabled = false;
+  let desiredOn = false;
+  let appliedOn = false;
   let toolsBeforePlan: string[] | undefined;
   let shortcutRegistered = false;
 
-  function setEnabled(next: boolean, ctx: ExtensionContext): void {
-    if (next === enabled) return;
-    enabled = next;
+  /** The footer markup for the current desired/applied pair. */
+  function statusMarkup(ctx: ExtensionContext): string | undefined {
+    const label = statusLabel(desiredOn, appliedOn);
+    return label === undefined ? undefined : ctx.ui.theme.fg("mdHeading", label);
+  }
 
-    if (enabled) {
+  function refreshStatus(ctx: ExtensionContext): void {
+    ctx.ui.setStatus("plan-mode", statusMarkup(ctx));
+  }
+
+  /** Record a toggle. The next prompt applies it; nothing else changes. */
+  function toggle(ctx: ExtensionContext): void {
+    desiredOn = !desiredOn;
+    refreshStatus(ctx);
+    ctx.ui.notify(
+      desiredOn
+        ? "Plan mode enabled. Takes effect on your next prompt."
+        : "Plan mode disabled. Takes effect on your next prompt.",
+      "info",
+    );
+  }
+
+  pi.on("session_start", (_event, ctx) => {
+    // A fresh extension state is normal mode; clear any stale status.
+    refreshStatus(ctx);
+    if (shortcutRegistered) return;
+    shortcutRegistered = true;
+    pi.registerShortcut(resolveShortcut(ctx.cwd) as ShortcutKey, {
+      description: "Toggle plan mode (read-only)",
+      handler: async (shortcutCtx) => toggle(shortcutCtx),
+    });
+  });
+
+  pi.registerCommand("plan", {
+    description: "Toggle plan mode (read-only)",
+    handler: async (_args, ctx) => toggle(ctx),
+  });
+
+  pi.on("before_agent_start", (_event, ctx) => {
+    const { transition, appliedOn: nextAppliedOn } = resolveTransition(
+      desiredOn,
+      appliedOn,
+    );
+    if (transition === "none") return;
+
+    appliedOn = nextAppliedOn;
+    if (transition === "enable") {
       toolsBeforePlan = pi.getActiveTools();
       pi.setActiveTools(withoutWriteTools(toolsBeforePlan));
     } else if (toolsBeforePlan !== undefined) {
       pi.setActiveTools(toolsBeforePlan);
       toolsBeforePlan = undefined;
     }
+    refreshStatus(ctx);
 
-    ctx.ui.setStatus(
-      "plan-mode",
-      enabled ? ctx.ui.theme.fg("mdHeading", "[PLAN]") : undefined,
-    );
-    ctx.ui.notify(enabled ? "Plan mode enabled." : "Plan mode disabled.", "info");
-  }
-
-  pi.on("session_start", (_event, ctx) => {
-    if (shortcutRegistered) return;
-    shortcutRegistered = true;
-    pi.registerShortcut(resolveShortcut(ctx.cwd) as ShortcutKey, {
-      description: "Toggle plan mode (read-only)",
-      handler: async (shortcutCtx) => setEnabled(!enabled, shortcutCtx),
-    });
-  });
-
-  pi.registerCommand("plan", {
-    description: "Toggle plan mode (read-only)",
-    handler: async (_args, ctx) => setEnabled(!enabled, ctx),
-  });
-
-  pi.on("before_agent_start", () => {
-    if (!enabled) return;
+    const enabling = transition === "enable";
     return {
       message: {
-        customType: PLAN_CONTEXT_TYPE,
-        content: PLAN_INSTRUCTION,
+        customType: enabling ? PLAN_CONTEXT_TYPE : PLAN_OFF_TYPE,
+        content: enabling ? PLAN_INSTRUCTION : PLAN_OFF_INSTRUCTION,
         display: false,
       },
     };
   });
 
   pi.on("context", (event) => {
-    if (enabled) return;
+    const dropped = appliedOn ? PLAN_OFF_TYPE : PLAN_CONTEXT_TYPE;
     return {
       messages: event.messages.filter(
-        (message) =>
-          (message as { customType?: string }).customType !== PLAN_CONTEXT_TYPE,
+        (message) => (message as { customType?: string }).customType !== dropped,
       ),
     };
   });
