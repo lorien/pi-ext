@@ -147,8 +147,8 @@ agreeing on a plan before anything is changed.
   instruction is never repeated through the session.
 - The footer names the mode you toggled to and marks it `~` until your
   next prompt applies it: `[PLAN]` in plan mode, `[~PLAN]` while
-  enabling is pending, `[~NORMAL]` while leaving is pending, and nothing
-  in normal mode.
+  enabling is pending, `[NORMAL]` in normal mode, and `[~NORMAL]` while
+  leaving is pending.
 - Both message texts are read at load from files beside the module:
   [`plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt) for the
   on-instruction and

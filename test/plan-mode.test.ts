@@ -164,8 +164,8 @@ describe("resolveTransition", () => {
 });
 
 describe("statusLabel", () => {
-  test("is unset in normal mode with nothing pending", () => {
-    assert.equal(statusLabel(false, false), undefined);
+  test("is [NORMAL] in normal mode with nothing pending", () => {
+    assert.equal(statusLabel(false, false), "[NORMAL]");
   });
 
   test("is [PLAN] once the mode is applied", () => {

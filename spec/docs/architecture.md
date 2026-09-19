@@ -113,10 +113,10 @@ does not swallow them and does not retry.
 - `context` is keyed on the applied mode and drops the message type that
   contradicts it: the read-only instruction while the mode is off, the
   off-notice while it is on. A mode message does not outlive its mode.
-- The footer names the desired mode and marks it pending with `~` until
-  the next prompt applies it: `[PLAN]` while plan mode is applied,
-  `[~PLAN]` while enabling is pending, `[~NORMAL]` while a lift is
-  pending, and nothing in normal mode with nothing pending.
+- The footer always names the desired mode and marks it pending with `~`
+  until the next prompt applies it: `[PLAN]` while plan mode is applied,
+  `[~PLAN]` while enabling is pending, `[NORMAL]` in normal mode, and
+  `[~NORMAL]` while a lift is pending.
 - State is in memory only; restart and resume both start in normal mode.
 - The pure helpers are the unit-tested seams: `withoutWriteTools(active)`
   returns the active tool names minus `edit` and `write`;

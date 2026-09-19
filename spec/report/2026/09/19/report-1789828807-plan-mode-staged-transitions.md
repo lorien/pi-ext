@@ -32,6 +32,9 @@
   desired mode (`[~PLAN]` while enabling, `[~NORMAL]` while lifting)
   instead of always `[~PLAN]`, which read as plan-pending even during a
   lift.
+- Refined it once more after live use: normal mode now shows `[NORMAL]`
+  instead of no status, so the footer names the desired mode in every
+  state and `~` is the only pending marker.
 
 ### Spec/ADR amendments
 

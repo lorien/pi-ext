@@ -23,9 +23,9 @@
  * Both message texts live in sibling files read at load; a missing or
  * blank file fails the extension load rather than injecting nothing.
  *
- * The footer names the desired mode and marks it `~` until the next
- * prompt applies it: `[PLAN]`, `[~PLAN]`, or `[~NORMAL]` while a lift is
- * pending; normal mode with nothing pending shows no status.
+ * The footer always names the desired mode and marks it `~` until the
+ * next prompt applies it: `[PLAN]` and `[~PLAN]` toward plan mode,
+ * `[NORMAL]` and `[~NORMAL]` toward normal mode.
  *
  * The toggle is also a keyboard shortcut, configurable through a
  * `planMode.shortcut` setting because extension shortcuts cannot be
@@ -129,18 +129,15 @@ export function resolveTransition(
 }
 
 /**
- * The footer label for the mode. It names the desired mode and marks it
- * pending with `~` until the next prompt applies it: `[PLAN]` in applied
- * plan mode, `[~PLAN]` while enabling is pending, `[~NORMAL]` while a
- * lift is pending (plan mode is still in effect), and nothing in normal
- * mode with nothing pending.
+ * The footer label for the mode. It always names the desired mode and
+ * marks it pending with `~` until the next prompt applies it: `[PLAN]`
+ * and `[~PLAN]` toward plan mode, `[NORMAL]` and `[~NORMAL]` toward
+ * normal mode. A `~` label means the mode still in effect is the other
+ * one.
  */
-export function statusLabel(
-  desiredOn: boolean,
-  appliedOn: boolean,
-): string | undefined {
-  if (desiredOn) return appliedOn ? "[PLAN]" : "[~PLAN]";
-  return appliedOn ? "[~NORMAL]" : undefined;
+export function statusLabel(desiredOn: boolean, appliedOn: boolean): string {
+  const name = desiredOn ? "PLAN" : "NORMAL";
+  return desiredOn === appliedOn ? `[${name}]` : `[~${name}]`;
 }
 
 /** The `planMode.shortcut` value in one settings file, or undefined. */
@@ -188,9 +185,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
   let shortcutRegistered = false;
 
   /** The footer markup for the current desired/applied pair. */
-  function statusMarkup(ctx: ExtensionContext): string | undefined {
-    const label = statusLabel(desiredOn, appliedOn);
-    return label === undefined ? undefined : ctx.ui.theme.fg("mdHeading", label);
+  function statusMarkup(ctx: ExtensionContext): string {
+    return ctx.ui.theme.fg("mdHeading", statusLabel(desiredOn, appliedOn));
   }
 
   function refreshStatus(ctx: ExtensionContext): void {

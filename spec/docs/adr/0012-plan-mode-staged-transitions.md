@@ -41,11 +41,12 @@ it started with.
   type that contradicts it: the read-only instruction while the mode is
   off, the off-notice while it is on. Stale mode messages are removed
   rather than superseded by a later message.
-- The footer names the desired mode and marks it pending with `~` until
-  the next prompt applies it: `[PLAN]`, `[~PLAN]`, and `[~NORMAL]` while
-  a lift is pending. (Revised the same day from a pending label that
-  always read `[~PLAN]`, which read as plan-pending even while lifting
-  the mode.)
+- The footer always names the desired mode and marks it pending with
+  `~` until the next prompt applies it: `[PLAN]` and `[~PLAN]` toward
+  plan mode, `[NORMAL]` and `[~NORMAL]` toward normal mode. (Revised the
+  same day: the pending label first always read `[~PLAN]`, which read
+  as plan-pending even while lifting the mode, and normal mode first
+  showed no status; the owner asked for a visible `[NORMAL]`.)
 
 ## Alternatives rejected
 
