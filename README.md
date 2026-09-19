@@ -145,8 +145,10 @@ agreeing on a plan before anything is changed.
   proposing yet another plan.
 - One message is injected per mode change, not per prompt, so the
   instruction is never repeated through the session.
-- The footer shows `[PLAN]` once a mode is applied and `[~PLAN]` while a
-  toggle is waiting for your next prompt.
+- The footer names the mode you toggled to and marks it `~` until your
+  next prompt applies it: `[PLAN]` in plan mode, `[~PLAN]` while
+  enabling is pending, `[~NORMAL]` while leaving is pending, and nothing
+  in normal mode.
 - Both message texts are read at load from files beside the module:
   [`plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt) for the
   on-instruction and

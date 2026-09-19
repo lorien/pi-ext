@@ -176,8 +176,8 @@ describe("statusLabel", () => {
     assert.equal(statusLabel(true, false), "[~PLAN]");
   });
 
-  test("is [~PLAN] while the mode is on but a lift is pending", () => {
-    assert.equal(statusLabel(false, true), "[~PLAN]");
+  test("is [~NORMAL] while a lift is pending", () => {
+    assert.equal(statusLabel(false, true), "[~NORMAL]");
   });
 });
 

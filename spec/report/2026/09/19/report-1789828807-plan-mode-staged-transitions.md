@@ -28,6 +28,10 @@
   `spec/docs/testing.md` (suite description and manual smoke test).
 - `npm run check` passes: 51 tests, and typecheck, lint, and the markdown
   checker report nothing wrong. The local-content checks are clean.
+- Refined the pending footer label after live use: it now names the
+  desired mode (`[~PLAN]` while enabling, `[~NORMAL]` while lifting)
+  instead of always `[~PLAN]`, which read as plan-pending even during a
+  lift.
 
 ### Spec/ADR amendments
 

@@ -23,8 +23,9 @@
  * Both message texts live in sibling files read at load; a missing or
  * blank file fails the extension load rather than injecting nothing.
  *
- * The footer shows `[PLAN]` once a mode is applied and `[~PLAN]` while a
- * toggle is waiting for the next prompt.
+ * The footer names the desired mode and marks it `~` until the next
+ * prompt applies it: `[PLAN]`, `[~PLAN]`, or `[~NORMAL]` while a lift is
+ * pending; normal mode with nothing pending shows no status.
  *
  * The toggle is also a keyboard shortcut, configurable through a
  * `planMode.shortcut` setting because extension shortcuts cannot be
@@ -128,16 +129,18 @@ export function resolveTransition(
 }
 
 /**
- * The footer label for the mode: `[PLAN]` when a mode is applied,
- * `[~PLAN]` while a toggle is waiting for the next prompt, and nothing
- * in normal mode with nothing pending.
+ * The footer label for the mode. It names the desired mode and marks it
+ * pending with `~` until the next prompt applies it: `[PLAN]` in applied
+ * plan mode, `[~PLAN]` while enabling is pending, `[~NORMAL]` while a
+ * lift is pending (plan mode is still in effect), and nothing in normal
+ * mode with nothing pending.
  */
 export function statusLabel(
   desiredOn: boolean,
   appliedOn: boolean,
 ): string | undefined {
-  if (!desiredOn && !appliedOn) return undefined;
-  return desiredOn === appliedOn ? "[PLAN]" : "[~PLAN]";
+  if (desiredOn) return appliedOn ? "[PLAN]" : "[~PLAN]";
+  return appliedOn ? "[~NORMAL]" : undefined;
 }
 
 /** The `planMode.shortcut` value in one settings file, or undefined. */
