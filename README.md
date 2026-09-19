@@ -148,7 +148,9 @@ agreeing on a plan before anything is changed.
 - The footer names the mode you toggled to and marks it `~` until your
   next prompt applies it: `[PLAN]` in plan mode, `[~PLAN]` while
   enabling is pending, `[NORMAL]` in normal mode, and `[~NORMAL]` while
-  leaving is pending.
+  leaving is pending. Plan labels are colored `mdHeading`, `[NORMAL]` is
+  dimmed to match the rest of the footer, and `[~NORMAL]` uses the
+  plain text color.
 - Both message texts are read at load from files beside the module:
   [`plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt) for the
   on-instruction and

@@ -116,11 +116,14 @@ does not swallow them and does not retry.
 - The footer always names the desired mode and marks it pending with `~`
   until the next prompt applies it: `[PLAN]` while plan mode is applied,
   `[~PLAN]` while enabling is pending, `[NORMAL]` in normal mode, and
-  `[~NORMAL]` while a lift is pending.
+  `[~NORMAL]` while a lift is pending. The plan labels are colored
+  `mdHeading`, `[NORMAL]` uses `dim` to match the footer's own text, and
+  `[~NORMAL]` uses `text`.
 - State is in memory only; restart and resume both start in normal mode.
 - The pure helpers are the unit-tested seams: `withoutWriteTools(active)`
   returns the active tool names minus `edit` and `write`;
   `resolveTransition(desired, applied)` decides the next transition;
   `statusLabel(desired, applied)` renders the footer label;
+  `statusToken(label)` picks the label's theme color;
   `loadPlanInstruction(path)` reads and trims a prompt file; and
   `resolveShortcut(cwd)` reads the settings.

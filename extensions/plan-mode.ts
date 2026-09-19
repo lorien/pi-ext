@@ -25,7 +25,9 @@
  *
  * The footer always names the desired mode and marks it `~` until the
  * next prompt applies it: `[PLAN]` and `[~PLAN]` toward plan mode,
- * `[NORMAL]` and `[~NORMAL]` toward normal mode.
+ * `[NORMAL]` and `[~NORMAL]` toward normal mode. The plan labels are
+ * colored `mdHeading`, `[NORMAL]` is `dim` like the footer's own text,
+ * and `[~NORMAL]` uses `text`.
  *
  * The toggle is also a keyboard shortcut, configurable through a
  * `planMode.shortcut` setting because extension shortcuts cannot be
@@ -140,6 +142,20 @@ export function statusLabel(desiredOn: boolean, appliedOn: boolean): string {
   return desiredOn === appliedOn ? `[${name}]` : `[~${name}]`;
 }
 
+/** Theme color tokens used for the footer labels. */
+export type StatusToken = "dim" | "text" | "mdHeading";
+
+/**
+ * The theme color token for a footer label: `dim` for applied normal
+ * mode, matching the footer's own text; `text` while a lift is pending;
+ * `mdHeading` for the plan-mode labels.
+ */
+export function statusToken(label: string): StatusToken {
+  if (label === "[NORMAL]") return "dim";
+  if (label === "[~NORMAL]") return "text";
+  return "mdHeading";
+}
+
 /** The `planMode.shortcut` value in one settings file, or undefined. */
 function readShortcutFromSettings(path: string): string | undefined {
   let raw: string;
@@ -186,7 +202,8 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
   /** The footer markup for the current desired/applied pair. */
   function statusMarkup(ctx: ExtensionContext): string {
-    return ctx.ui.theme.fg("mdHeading", statusLabel(desiredOn, appliedOn));
+    const label = statusLabel(desiredOn, appliedOn);
+    return ctx.ui.theme.fg(statusToken(label), label);
   }
 
   function refreshStatus(ctx: ExtensionContext): void {

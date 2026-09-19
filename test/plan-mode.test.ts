@@ -11,6 +11,7 @@ import {
   resolveShortcut,
   resolveTransition,
   statusLabel,
+  statusToken,
   withoutWriteTools,
 } from "../extensions/plan-mode.ts";
 
@@ -178,6 +179,21 @@ describe("statusLabel", () => {
 
   test("is [~NORMAL] while a lift is pending", () => {
     assert.equal(statusLabel(false, true), "[~NORMAL]");
+  });
+});
+
+describe("statusToken", () => {
+  test("colors [NORMAL] dim, matching the footer's own text", () => {
+    assert.equal(statusToken("[NORMAL]"), "dim");
+  });
+
+  test("colors [~NORMAL] with the text token", () => {
+    assert.equal(statusToken("[~NORMAL]"), "text");
+  });
+
+  test("colors the plan labels mdHeading", () => {
+    assert.equal(statusToken("[PLAN]"), "mdHeading");
+    assert.equal(statusToken("[~PLAN]"), "mdHeading");
   });
 });
 

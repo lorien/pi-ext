@@ -35,6 +35,9 @@
 - Refined it once more after live use: normal mode now shows `[NORMAL]`
   instead of no status, so the footer names the desired mode in every
   state and `~` is the only pending marker.
+- Colored the labels per state after live use, through the new
+  `statusToken()` helper: plan labels keep `mdHeading`, `[NORMAL]` is
+  `dim` like the footer's own text, and `[~NORMAL]` uses `text`.
 
 ### Spec/ADR amendments
 

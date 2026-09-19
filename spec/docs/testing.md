@@ -182,7 +182,9 @@ covers `resolveTransition()`: the enable and disable transitions, `none`
 while the desired and applied modes agree, and a toggle reversed before
 a run collapsing to `none`. It also covers `statusLabel()`: `[PLAN]` while
 plan mode is applied, `[~PLAN]` while enabling is pending, `[NORMAL]` in
-normal mode, and `[~NORMAL]` while a lift is pending.
+normal mode, and `[~NORMAL]` while a lift is pending. It also covers
+`statusToken()`: `dim` for `[NORMAL]`, `text` for `[~NORMAL]`, and
+`mdHeading` for the plan labels.
 It also asserts that both shipped prompt files load with content. The
 rest of the extension — the command and shortcut toggle,,
 the `session_start` shortcut registration, the `before_agent_start`
