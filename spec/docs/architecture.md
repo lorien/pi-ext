@@ -141,3 +141,15 @@ write tools and the off-notice warns when a tool could not be brought
 back. A session deliberately configured without `edit`/`write` is never
 touched.
 
+## Plan-mode standing guideline (ADR-0014)
+
+The mode's state — not just its transitions — rides the system prompt: on
+every `before_agent_start` the extension keeps exactly one guideline in
+`systemPromptOptions.promptGuidelines`. Applied → the read-only guideline
+with the `var/` scratch exception; after the first lift → the "you may
+edit files again" guideline; never applied → nothing. Guidelines are
+recognized by their `Plan mode` prefix and re-synced per request, so they
+never stack and edited texts are replaced. The hidden one-time messages
+remain the transition signals; the guideline is the per-request state
+signal.
+

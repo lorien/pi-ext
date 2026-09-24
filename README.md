@@ -136,6 +136,12 @@ agreeing on a plan before anything is changed.
   toggling mid-run never pulls tools or instructions out from under the
   running agent, and toggling twice without a prompt in between changes
   nothing at all.
+- While plan mode is on, a standing guideline rides the system prompt on
+  every request: read-only through every tool (bash included), with one
+  write exception — the project's `var/` scratch directory. After the
+  first lift the guideline flips to "you may edit files again"; sessions
+  that never used plan mode carry no plan-mode prompt at all
+  ([ADR-0014](./spec/docs/adr/0014-plan-mode-standing-guideline.md)).
 - While plan mode is on, the `edit` and `write` tools are disabled and a
   hidden instruction tells the model it is in a read-only phase and must
   answer the request as asked — a plan is appended only when the user

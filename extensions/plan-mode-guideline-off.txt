@@ -1,0 +1,4 @@
+Plan mode is off: you may create, edit, and delete files again through the
+usual tools (the `var/`-only scratch rule no longer applies — the normal
+project workflow is in effect). If the user's request is an instruction to
+act, execute it now instead of proposing another plan.

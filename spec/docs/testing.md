@@ -169,6 +169,13 @@ they are pure enough to test without starting pi. The z.ai suite covers:
 - the error naming every source when no key is configured
 - the error naming the file when a settings file cannot be parsed
 
+The plan-mode suite covers the standing guideline (ADR-0014): no
+guideline before the mode is ever applied; the ON guideline (with the
+`var/` allowance) on every prompt while applied without stacking; the OFF
+guideline after the first lift, kept on later prompts and swapped back on
+re-enable; no guideline in a fresh (resumed) session that never applied
+the mode; the loader still rejects empty guideline files.
+
 The plan-mode suite covers resume healing (ADR-0013):
 `missingWriteTools()` / `withConfiguredWriteTools()`, plus a mock-pi
 end-to-end of the corruption scenario — enable, simulated resume with a

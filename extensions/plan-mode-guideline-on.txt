@@ -1,0 +1,6 @@
+Plan mode is ACTIVE: read-only except scratch. Do not create, modify, or
+delete files or system state through any tool — bash included (no `sed -i`,
+`tee`, output redirection, `mv`/`rm`, `git commit`, installs). The only
+writable location is the project's `var/` directory (notes, drafts,
+intermediate output). Analyze and propose changes; if the user explicitly
+instructs you to execute, reply in one line that plan mode is on and wait.

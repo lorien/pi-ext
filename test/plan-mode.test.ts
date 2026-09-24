@@ -10,6 +10,8 @@ import {
   DEFAULT_SHORTCUT,
   loadPlanInstruction,
   missingWriteTools,
+  PLAN_GUIDELINE_OFF,
+  PLAN_GUIDELINE_ON,
   planModeExtension,
   resolveShortcut,
   resolveTransition,
@@ -320,16 +322,27 @@ function makeMockPi(
     },
     ui,
   };
+  const guidelines: string[] = [];
   return {
     api: api as unknown as ExtensionAPI,
     ctx,
     notifications,
     commands,
     activeTools: () => [...active],
+    guidelines,
     fire: (event: string) =>
       handlers.get(event)?.({}, ctx) as
         | { message?: { customType?: string; content?: string } }
         | undefined,
+    fireStart: () =>
+      handlers.get("before_agent_start")?.(
+        {
+          type: "before_agent_start",
+          prompt: "",
+          systemPromptOptions: { promptGuidelines: guidelines },
+        },
+        ctx,
+      ) as { message?: { customType?: string; content?: string } } | undefined,
     toggle: () => commands[0]?.handler({}, ctx),
   };
 }
@@ -383,7 +396,7 @@ describe("resume healing (ADR-0013)", () => {
 
     // plan mode on: write tools removed from the active set
     first.toggle();
-    const enabled = await first.fire("before_agent_start");
+    const enabled = await first.fireStart();
     assert.equal(enabled?.message?.customType, "plan-mode-context");
     assert.deepEqual(first.activeTools(), ["read", "bash"]);
 
@@ -403,11 +416,11 @@ describe("resume healing (ADR-0013)", () => {
     await pi.fire("session_start");
 
     pi.toggle();
-    await pi.fire("before_agent_start");
+    await pi.fireStart();
     assert.deepEqual(pi.activeTools(), ["read", "bash"]);
 
     pi.toggle(); // plan mode off
-    const disabled = await pi.fire("before_agent_start");
+    const disabled = await pi.fireStart();
     assert.equal(disabled?.message?.customType, "plan-mode-off");
     assert.deepEqual(pi.activeTools(), all);
     assert.equal(disabled?.message?.content?.includes("Warning"), false);
@@ -420,10 +433,68 @@ describe("resume healing (ADR-0013)", () => {
     planModeExtension(pi.api);
     await pi.fire("session_start");
     pi.toggle();
-    await pi.fire("before_agent_start"); // enable applies: write tools removed
+    await pi.fireStart(); // enable applies: write tools removed
     refused = true; // the disable restore now fails (e.g. a broken tool store)
     pi.toggle();
-    const disabled = await pi.fire("before_agent_start");
+    const disabled = await pi.fireStart();
     assert.match(String(disabled?.message?.content ?? ""), /Warning: edit, write/);
+  });
+});
+
+describe("standing guideline (ADR-0014)", () => {
+  test("no guideline before plan mode is ever applied", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const pi = makeMockPi(all, all);
+    planModeExtension(pi.api);
+    await pi.fire("session_start");
+    await pi.fireStart();
+    assert.equal(pi.guidelines.length, 0);
+  });
+
+  test("the ON guideline rides every prompt while applied, then OFF after the lift", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const pi = makeMockPi(all, all);
+    planModeExtension(pi.api);
+    await pi.fire("session_start");
+
+    pi.toggle();
+    await pi.fireStart();
+    assert.deepEqual(pi.guidelines, [PLAN_GUIDELINE_ON]);
+    assert.match(PLAN_GUIDELINE_ON, /var\//);
+
+    // subsequent prompts keep exactly one guideline (no stacking)
+    await pi.fireStart();
+    await pi.fireStart();
+    assert.deepEqual(pi.guidelines, [PLAN_GUIDELINE_ON]);
+
+    pi.toggle();
+    const disabled = await pi.fireStart();
+    assert.equal(disabled?.message?.customType, "plan-mode-off");
+    assert.deepEqual(pi.guidelines, [PLAN_GUIDELINE_OFF]);
+    assert.match(PLAN_GUIDELINE_OFF, /may create, edit, and delete files again/);
+
+    // further prompts keep the OFF guideline until the mode is used again
+    await pi.fireStart();
+    assert.deepEqual(pi.guidelines, [PLAN_GUIDELINE_OFF]);
+
+    pi.toggle();
+    await pi.fireStart();
+    assert.deepEqual(pi.guidelines, [PLAN_GUIDELINE_ON]);
+  });
+
+  test("a fresh session (resume) that never applied the mode carries no guideline", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const resumed = makeMockPi(all, all);
+    planModeExtension(resumed.api);
+    await resumed.fire("session_start");
+    await resumed.fireStart();
+    assert.equal(resumed.guidelines.length, 0);
+  });
+
+  test("the guideline loader rejects an empty guideline file", () => {
+    const dir = tempDir("pi-ext-empty-guideline-");
+    const empty = join(dir, "empty.txt");
+    writeFileSync(empty, "   \n");
+    assert.throws(() => loadPlanInstruction(empty), /is empty/);
   });
 });

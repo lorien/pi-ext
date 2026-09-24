@@ -45,6 +45,19 @@
  * configured write tool missing from the active set; the `disable` restore
  * unions the checkpoint with the configured write tools, and the off-notice
  * reports honestly when a write tool could not be brought back.
+ *
+ * A standing guideline rides the system prompt (ADR-0014). The one-time
+ * hidden messages live at their transition point in the transcript, so
+ * their pull on the model decays as the session grows — a live incident
+ * showed an explicit user build order overriding the mode. While the mode
+ * is applied, a read-only guideline (with a `var/` scratch allowance) is
+ * kept in `systemPromptOptions.promptGuidelines` on every
+ * `before_agent_start`, so it is present in every request and cannot be
+ * forgotten mid-session. After the first lift, an off-guideline ("you may
+ * edit files again") replaces it; a session that never applied plan mode
+ * carries no plan-mode prompt content at all. Idempotent per request:
+ * guideline strings are recognized by their `Plan mode` prefix and
+ * re-synced, never stacked.
  */
 
 import { readFileSync } from "node:fs";
@@ -92,6 +105,25 @@ const PLAN_INSTRUCTION = loadPlanInstruction(PLAN_PROMPT_FILE);
 /** Notice injected as a hidden message when plan mode turns off. */
 const PLAN_OFF_INSTRUCTION = loadPlanInstruction(PLAN_OFF_PROMPT_FILE);
 
+/** File holding the standing system-prompt guideline while the mode is applied. */
+const PLAN_GUIDELINE_ON_FILE = fileURLToPath(
+  new URL("./plan-mode-guideline-on.txt", import.meta.url),
+);
+
+/** File holding the standing system-prompt guideline after the first lift. */
+const PLAN_GUIDELINE_OFF_FILE = fileURLToPath(
+  new URL("./plan-mode-guideline-off.txt", import.meta.url),
+);
+
+/** Standing system-prompt guideline while plan mode is applied. */
+export const PLAN_GUIDELINE_ON = loadPlanInstruction(PLAN_GUIDELINE_ON_FILE);
+
+/** Standing system-prompt guideline after the first lift in a session. */
+export const PLAN_GUIDELINE_OFF = loadPlanInstruction(PLAN_GUIDELINE_OFF_FILE);
+
+/** Prefix identifying this extension's guideline strings (text edits tolerated). */
+export const PLAN_GUIDELINE_PREFIX = "Plan mode";
+
 /**
  * Read a plan-mode prompt from `path`, trimmed. Throws when the file
  * cannot be read or holds only whitespace: an injection with no text
@@ -127,6 +159,15 @@ export function missingWriteTools(active: string[], allNames: string[]): string[
   return WRITE_TOOLS.filter(
     (name) => allNames.includes(name) && !active.includes(name),
   );
+}
+
+/** The guideline that should ride the system prompt, or none (ADR-0014). */
+export function wantedGuideline(
+  appliedOn: boolean,
+  everApplied: boolean,
+): string | null {
+  if (appliedOn) return PLAN_GUIDELINE_ON;
+  return everApplied ? PLAN_GUIDELINE_OFF : null;
 }
 
 /**
@@ -230,6 +271,8 @@ export function resolveShortcut(cwd: string): string {
 export function planModeExtension(pi: ExtensionAPI): void {
   let desiredOn = false;
   let appliedOn = false;
+  /** Whether plan mode was ever applied in this session (per process). */
+  let everApplied = false;
   let toolsBeforePlan: string[] | undefined;
   let shortcutRegistered = false;
 
@@ -296,27 +339,40 @@ export function planModeExtension(pi: ExtensionAPI): void {
     handler: async (_args, ctx) => toggle(ctx),
   });
 
-  pi.on("before_agent_start", (_event, ctx) => {
+  pi.on("before_agent_start", (event, ctx) => {
     const { transition, appliedOn: nextAppliedOn } = resolveTransition(
       desiredOn,
       appliedOn,
     );
-    if (transition === "none") return;
 
-    appliedOn = nextAppliedOn;
-    if (transition === "enable") {
-      // Snapshot only a healthy set: heal first, so a stale delta cannot
-      // turn a gutted list into the restore baseline (ADR-0013).
-      healToolSet();
-      toolsBeforePlan = pi.getActiveTools();
-      pi.setActiveTools(withoutWriteTools(toolsBeforePlan));
-    } else if (toolsBeforePlan !== undefined) {
-      const allNames = pi.getAllTools().map((tool) => tool.name);
-      pi.setActiveTools(withConfiguredWriteTools(toolsBeforePlan, allNames));
-      toolsBeforePlan = undefined;
+    let result: ReturnType<typeof transitionMessage> | undefined;
+    if (transition !== "none") {
+      appliedOn = nextAppliedOn;
+      if (transition === "enable") {
+        // Snapshot only a healthy set: heal first, so a stale delta cannot
+        // turn a gutted list into the restore baseline (ADR-0013).
+        everApplied = true;
+        healToolSet();
+        toolsBeforePlan = pi.getActiveTools();
+        pi.setActiveTools(withoutWriteTools(toolsBeforePlan));
+      } else if (toolsBeforePlan !== undefined) {
+        const allNames = pi.getAllTools().map((tool) => tool.name);
+        pi.setActiveTools(withConfiguredWriteTools(toolsBeforePlan, allNames));
+        toolsBeforePlan = undefined;
+      }
+      refreshStatus(ctx);
+      result = transitionMessage(transition);
     }
-    refreshStatus(ctx);
 
+    // Standing guideline (ADR-0014): re-synced on every prompt, never
+    // stacked. Runs after the transition so it reflects the applied mode.
+    syncGuideline(event);
+
+    return result;
+  });
+
+  /** The one-time hidden message for a mode transition. */
+  function transitionMessage(transition: "enable" | "disable") {
     const enabling = transition === "enable";
     let content = enabling ? PLAN_INSTRUCTION : PLAN_OFF_INSTRUCTION;
     if (!enabling) {
@@ -335,7 +391,25 @@ export function planModeExtension(pi: ExtensionAPI): void {
         display: false,
       },
     };
-  });
+  }
+
+  /**
+   * Keep exactly one plan-mode guideline in `promptGuidelines`: the ON text
+   * while applied, the OFF text only after the mode was used in this
+   * session, nothing otherwise (ADR-0014). Our strings are recognized by
+   * prefix, so a text edited between runs is replaced, never stacked.
+   */
+  function syncGuideline(event: {
+    systemPromptOptions?: { promptGuidelines?: string[] };
+  }): void {
+    const guidelines = event.systemPromptOptions?.promptGuidelines;
+    if (guidelines === undefined) return;
+    const kept = guidelines.filter((line) => !line.startsWith(PLAN_GUIDELINE_PREFIX));
+    guidelines.length = 0;
+    guidelines.push(...kept);
+    const wanted = wantedGuideline(appliedOn, everApplied);
+    if (wanted) guidelines.push(wanted);
+  }
 
   pi.on("context", (event) => {
     const dropped = appliedOn ? PLAN_OFF_TYPE : PLAN_CONTEXT_TYPE;
