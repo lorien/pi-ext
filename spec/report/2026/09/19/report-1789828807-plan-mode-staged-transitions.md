@@ -64,8 +64,11 @@
   summarization input), not in this extension.
 - `[open]` Toggling plan mode on mid-run leaves the running agent with
   the write tools until the next prompt; the owner accepted this.
-- `[open]` Restoring the recorded tool list on disable still overwrites
+- `[acted]` Restoring the recorded tool list on disable still overwrites
   any active-tool change another extension made during the on period.
+  — resolved 2026-09-24 by ADR-0013: disable now restores the *union* of
+  the checkpoint and the configured write tools, so concurrently added
+  tools are kept.
 - `[open]` Both prompt files are read once at load; an edit needs a pi
   reload.
 

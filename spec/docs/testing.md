@@ -169,6 +169,13 @@ they are pure enough to test without starting pi. The z.ai suite covers:
 - the error naming every source when no key is configured
 - the error naming the file when a settings file cannot be parsed
 
+The plan-mode suite covers resume healing (ADR-0013):
+`missingWriteTools()` / `withConfiguredWriteTools()`, plus a mock-pi
+end-to-end of the corruption scenario — enable, simulated resume with a
+gutted replayed tool set, heal with notification, and a clean
+enable/disable round-trip — and the off-notice warning when a restore
+cannot bring a configured write tool back.
+
 The plan-mode suite covers `withoutWriteTools()`: removal of `edit` and
 `write` with the other tools' order preserved, a no-op when neither is
 active, exact-name matching, and the empty list. It also covers

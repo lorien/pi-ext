@@ -41,9 +41,12 @@
   also have coverage; the pi-wired handlers remain untested.)
 - `[open]` The `planMode.shortcut` value is read at `session_start`, so a
   settings change needs a `/reload` or a new session to take effect.
-- `[open]` Restoring the recorded tool list on disable overwrites any
+- `[acted]` Restoring the recorded tool list on disable overwrites any
   active-tool change another extension made while plan mode was on. A
   merge against the current set would avoid that.
+  — resolved 2026-09-24 by ADR-0013: disable now unions the checkpoint
+  with the configured write tools (stale checkpoints can no longer strand
+  `edit`/`write` either).
 - `[open]` Plan mode does not restrict `bash`, so shell writes such as
   `rm` or `echo > file` still work. The instruction and the disabled
   tools are a guardrail, not a sandbox.

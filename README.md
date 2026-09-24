@@ -160,6 +160,11 @@ agreeing on a plan before anything is changed.
 - The mode is in memory only: restarting pi or resuming a session starts
   in normal mode.
 - `bash` is not restricted, so plan mode is a guardrail, not a sandbox.
+- Tool-set deltas persist in the session transcript but the mode's flags do
+  not; a resume heals the active set (configured `edit`/`write` lost to a
+  stale delta are restored at startup, before checkpointing on enable, and
+  unioned back on disable — with an honest off-notice when that fails).
+  See [ADR-0013](./spec/docs/adr/0013-plan-mode-resume-healing.md).
 
 ### Shortcut
 

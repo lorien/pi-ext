@@ -35,6 +35,16 @@
  *
  * State is in memory only: a restart or session resume starts in normal
  * mode.
+ *
+ * Resumes heal the tool set (ADR-0013). `setActiveTools` deltas persist in
+ * the session transcript, so a resume can replay a "write tools removed"
+ * delta from a previous process while this process starts in normal mode —
+ * edit/write would stay gone forever, and the next `enable` would
+ * checkpoint the gutted set as the restore baseline. On `session_start`,
+ * and again before checkpointing on `enable`, the extension restores any
+ * configured write tool missing from the active set; the `disable` restore
+ * unions the checkpoint with the configured write tools, and the off-notice
+ * reports honestly when a write tool could not be brought back.
  */
 
 import { readFileSync } from "node:fs";
@@ -106,6 +116,29 @@ export function loadPlanInstruction(path: string): string {
 /** `active` without the write tools, preserving order. */
 export function withoutWriteTools(active: string[]): string[] {
   return active.filter((name) => !WRITE_TOOLS.includes(name));
+}
+
+/**
+ * Write tools that are *configured* (`allNames`) but missing from `active`.
+ * A non-empty result means the active set was gutted by a stale transcript
+ * delta (a resume replays tool deltas but not the extension's flags).
+ */
+export function missingWriteTools(active: string[], allNames: string[]): string[] {
+  return WRITE_TOOLS.filter(
+    (name) => allNames.includes(name) && !active.includes(name),
+  );
+}
+
+/**
+ * `names` plus every configured write tool — the restore set for `disable`.
+ * Unioning (not just replaying the checkpoint) keeps a stale checkpoint
+ * from permanently losing the write tools.
+ */
+export function withConfiguredWriteTools(
+  names: string[],
+  allNames: string[],
+): string[] {
+  return [...new Set([...names, ...missingWriteTools(names, allNames)])];
 }
 
 /** A mode transition to apply at the next run boundary. */
@@ -194,7 +227,7 @@ export function resolveShortcut(cwd: string): string {
   return readShortcutFromSettings(globalSettings) ?? DEFAULT_SHORTCUT;
 }
 
-export default function planModeExtension(pi: ExtensionAPI): void {
+export function planModeExtension(pi: ExtensionAPI): void {
   let desiredOn = false;
   let appliedOn = false;
   let toolsBeforePlan: string[] | undefined;
@@ -208,6 +241,20 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
   function refreshStatus(ctx: ExtensionContext): void {
     ctx.ui.setStatus("plan-mode", statusMarkup(ctx));
+  }
+
+  /**
+   * Restore write tools lost to a stale transcript delta. Returns the
+   * healed names, or undefined when the active set already holds every
+   * configured write tool (ADR-0013).
+   */
+  function healToolSet(): string[] | undefined {
+    const active = pi.getActiveTools();
+    const allNames = pi.getAllTools().map((tool) => tool.name);
+    const missing = missingWriteTools(active, allNames);
+    if (missing.length === 0) return undefined;
+    pi.setActiveTools([...active, ...missing]);
+    return missing;
   }
 
   /** Record a toggle. The next prompt applies it; nothing else changes. */
@@ -225,6 +272,17 @@ export default function planModeExtension(pi: ExtensionAPI): void {
   pi.on("session_start", (_event, ctx) => {
     // A fresh extension state is normal mode; clear any stale status.
     refreshStatus(ctx);
+    if (!appliedOn) {
+      // A resume replays tool deltas but not our flags: heal write tools a
+      // previous process removed while it was in plan mode.
+      const healed = healToolSet();
+      if (healed) {
+        ctx.ui.notify(
+          `Plan mode: restored write tool(s) lost to a stale session delta: ${healed.join(", ")}`,
+          "info",
+        );
+      }
+    }
     if (shortcutRegistered) return;
     shortcutRegistered = true;
     pi.registerShortcut(resolveShortcut(ctx.cwd) as ShortcutKey, {
@@ -247,19 +305,33 @@ export default function planModeExtension(pi: ExtensionAPI): void {
 
     appliedOn = nextAppliedOn;
     if (transition === "enable") {
+      // Snapshot only a healthy set: heal first, so a stale delta cannot
+      // turn a gutted list into the restore baseline (ADR-0013).
+      healToolSet();
       toolsBeforePlan = pi.getActiveTools();
       pi.setActiveTools(withoutWriteTools(toolsBeforePlan));
     } else if (toolsBeforePlan !== undefined) {
-      pi.setActiveTools(toolsBeforePlan);
+      const allNames = pi.getAllTools().map((tool) => tool.name);
+      pi.setActiveTools(withConfiguredWriteTools(toolsBeforePlan, allNames));
       toolsBeforePlan = undefined;
     }
     refreshStatus(ctx);
 
     const enabling = transition === "enable";
+    let content = enabling ? PLAN_INSTRUCTION : PLAN_OFF_INSTRUCTION;
+    if (!enabling) {
+      const stillMissing = missingWriteTools(
+        pi.getActiveTools(),
+        pi.getAllTools().map((tool) => tool.name),
+      );
+      if (stillMissing.length > 0) {
+        content += `\n\nWarning: ${stillMissing.join(", ")} ${stillMissing.length === 1 ? "is" : "are"} configured but still inactive after the restore — the pre-plan tool checkpoint was stale.`;
+      }
+    }
     return {
       message: {
         customType: enabling ? PLAN_CONTEXT_TYPE : PLAN_OFF_TYPE,
-        content: enabling ? PLAN_INSTRUCTION : PLAN_OFF_INSTRUCTION,
+        content,
         display: false,
       },
     };
@@ -274,3 +346,5 @@ export default function planModeExtension(pi: ExtensionAPI): void {
     };
   });
 }
+
+export default planModeExtension;

@@ -127,3 +127,17 @@ does not swallow them and does not retry.
   `statusToken(label)` picks the label's theme color;
   `loadPlanInstruction(path)` reads and trims a prompt file; and
   `resolveShortcut(cwd)` reads the settings.
+
+## Plan-mode resume healing (ADR-0013)
+
+`setActiveTools` deltas persist in the session transcript; plan mode's
+flags do not. A resume can therefore replay a "write tools removed" delta
+while the extension starts in normal mode, which previously stranded
+`edit`/`write` forever and corrupted the restore checkpoint. The extension
+now heals: on `session_start` (when not applied) and again before
+checkpointing on `enable`, any *configured* write tool missing from the
+active set is restored; `disable` unions the checkpoint with the configured
+write tools and the off-notice warns when a tool could not be brought
+back. A session deliberately configured without `edit`/`write` is never
+touched.
+

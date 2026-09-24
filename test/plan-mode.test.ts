@@ -4,14 +4,18 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
 import { fileURLToPath } from "node:url";
+import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import {
   DEFAULT_SHORTCUT,
   loadPlanInstruction,
+  missingWriteTools,
+  planModeExtension,
   resolveShortcut,
   resolveTransition,
   statusLabel,
   statusToken,
+  withConfiguredWriteTools,
   withoutWriteTools,
 } from "../extensions/plan-mode.ts";
 
@@ -271,5 +275,155 @@ describe("resolveShortcut", () => {
   test("defaults when the planMode section is not an object", () => {
     const cwd = project(JSON.stringify({ planMode: "alt+m" }));
     assert.equal(resolveShortcut(cwd), DEFAULT_SHORTCUT);
+  });
+});
+
+/** A pi-like object recording handlers and notifications over a shared tool store. */
+function makeMockPi(
+  initialActive: string[],
+  allTools: string[],
+  options?: { refuseRestore?: () => boolean },
+) {
+  let active = [...initialActive];
+  const handlers = new Map<string, (event: unknown, ctx: unknown) => unknown>();
+  const commands: { handler: (args: unknown, ctx: unknown) => void }[] = [];
+  const notifications: string[] = [];
+  const ui = {
+    notify: (message: string) => {
+      notifications.push(message);
+    },
+    setStatus: () => {},
+    theme: { fg: (_token: string, label: string) => label },
+  };
+  const ctx = { cwd: project(), ui };
+  const api = {
+    on: (event: string, handler: (event: unknown, ctx: unknown) => unknown) => {
+      handlers.set(event, handler);
+    },
+    registerCommand: (
+      _name: unknown,
+      options: { handler: (args: unknown, ctx: unknown) => void },
+    ) => {
+      commands.push(options);
+    },
+    registerShortcut: () => {},
+    getActiveTools: () => [...active],
+    getAllTools: () =>
+      allTools.map((name) => ({
+        name,
+        description: "",
+        parameters: {},
+        promptGuidelines: [],
+      })),
+    setActiveTools: (names: string[]) => {
+      if (!options?.refuseRestore?.()) active = [...names];
+    },
+    ui,
+  };
+  return {
+    api: api as unknown as ExtensionAPI,
+    ctx,
+    notifications,
+    commands,
+    activeTools: () => [...active],
+    fire: (event: string) =>
+      handlers.get(event)?.({}, ctx) as
+        | { message?: { customType?: string; content?: string } }
+        | undefined,
+    toggle: () => commands[0]?.handler({}, ctx),
+  };
+}
+
+describe("missingWriteTools", () => {
+  test("reports configured write tools absent from the active set", () => {
+    assert.deepEqual(
+      missingWriteTools(["read", "bash"], ["read", "bash", "edit", "write"]),
+      ["edit", "write"],
+    );
+  });
+
+  test("is empty when every configured write tool is active", () => {
+    assert.deepEqual(
+      missingWriteTools(
+        ["read", "bash", "edit", "write"],
+        ["read", "bash", "edit", "write"],
+      ),
+      [],
+    );
+  });
+
+  test("ignores write tools that are not configured", () => {
+    assert.deepEqual(missingWriteTools(["read", "bash"], ["read", "bash"]), []);
+  });
+});
+
+describe("withConfiguredWriteTools", () => {
+  test("unions a stale checkpoint with the configured write tools", () => {
+    assert.deepEqual(
+      withConfiguredWriteTools(["read", "bash"], ["read", "bash", "edit", "write"]),
+      ["read", "bash", "edit", "write"],
+    );
+  });
+
+  test("does not duplicate names and adds nothing unconfigured", () => {
+    assert.deepEqual(
+      withConfiguredWriteTools(["read", "edit", "write"], ["read", "edit", "write"]),
+      ["read", "edit", "write"],
+    );
+  });
+});
+
+describe("resume healing (ADR-0013)", () => {
+  test("a resume heals write tools lost to a stale transcript delta", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const first = makeMockPi(all, all);
+    planModeExtension(first.api);
+    await first.fire("session_start");
+    assert.deepEqual(first.notifications, []);
+
+    // plan mode on: write tools removed from the active set
+    first.toggle();
+    const enabled = await first.fire("before_agent_start");
+    assert.equal(enabled?.message?.customType, "plan-mode-context");
+    assert.deepEqual(first.activeTools(), ["read", "bash"]);
+
+    // simulate a resume: fresh extension state, gutted tool set replayed
+    const resumed = makeMockPi(first.activeTools(), all);
+    planModeExtension(resumed.api);
+    await resumed.fire("session_start");
+    assert.deepEqual(resumed.activeTools(), all);
+    assert.equal(resumed.notifications.length, 1);
+    assert.match(resumed.notifications[0] ?? "", /restored write tool/);
+  });
+
+  test("enable after healing checkpoints the healthy set; disable restores it", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const pi = makeMockPi(all, all);
+    planModeExtension(pi.api);
+    await pi.fire("session_start");
+
+    pi.toggle();
+    await pi.fire("before_agent_start");
+    assert.deepEqual(pi.activeTools(), ["read", "bash"]);
+
+    pi.toggle(); // plan mode off
+    const disabled = await pi.fire("before_agent_start");
+    assert.equal(disabled?.message?.customType, "plan-mode-off");
+    assert.deepEqual(pi.activeTools(), all);
+    assert.equal(disabled?.message?.content?.includes("Warning"), false);
+  });
+
+  test("the off-notice reports when a write tool could not be restored", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    let refused = false;
+    const pi = makeMockPi(all, all, { refuseRestore: () => refused });
+    planModeExtension(pi.api);
+    await pi.fire("session_start");
+    pi.toggle();
+    await pi.fire("before_agent_start"); // enable applies: write tools removed
+    refused = true; // the disable restore now fails (e.g. a broken tool store)
+    pi.toggle();
+    const disabled = await pi.fire("before_agent_start");
+    assert.match(String(disabled?.message?.content ?? ""), /Warning: edit, write/);
   });
 });
