@@ -1,7 +1,7 @@
 # ADR-0012: Plan mode staged transitions and off notice
 
 Date: 2026-09-19
-Status: accepted
+Status: accepted (revised 2026-09-24 by ADR-0015 — per-prompt re-assertion)
 
 ## Context
 

@@ -33,12 +33,15 @@
 
 ### Future-task notes
 
-- `[open]` Only `withoutWriteTools()` and `resolveShortcut()` have
+- `[acted]` Only `withoutWriteTools()` and `resolveShortcut()` have
   coverage. The command handler, the `session_start` shortcut
   registration, the `before_agent_start` injection, and the `context`
   filter are wired to pi state and are untested. (2026-09-19:
   `resolveTransition()`, `statusLabel()`, and both prompt-file loads
   also have coverage; the pi-wired handlers remain untested.)
+  — resolved 2026-09-24 by ADR-0015: the command handler, the per-prompt
+  injection, and the `context` filter now have mock-pi coverage; the
+  shortcut registration stays a stub.
 - `[open]` The `planMode.shortcut` value is read at `session_start`, so a
   settings change needs a `/reload` or a new session to take effect.
 - `[acted]` Restoring the recorded tool list on disable overwrites any

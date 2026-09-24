@@ -1,4 +1,4 @@
-## Report on task: Plan-mode standing guideline + var/ scratch + session-aware off state (ADR-0014)
+## Report on task: Plan-mode standing guideline + var/ scratch + off state (ADR-0014)
 
 Ad-hoc owner request (2026-09-24): implement the "motivation" enhancement
 (item 1 of the proposal only — no bash guard, no full prompt rewrite), add

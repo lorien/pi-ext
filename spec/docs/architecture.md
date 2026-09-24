@@ -98,7 +98,7 @@ does not swallow them and does not retry.
   message-injection decision of `adr/0009-plan-mode-instruction-injection.md`.
 - Applying a transition swaps the tool set — recording the active tools
   and removing `edit` and `write` to enable, restoring the recorded list
-  to disable — and injects exactly one hidden message: the read-only
+  to disable — and injects a hidden message: the full read-only
   instruction (`customType: "plan-mode-context"`) on enable, and an
   off-notice (`customType: "plan-mode-off"`) on disable. The on-instruction
   states the read-only restriction and scopes the reply to the request: a
@@ -106,13 +106,19 @@ does not swallow them and does not retry.
   plan. The off-notice tells the model the mode is lifted and that an
   instruction to act should be executed. The system prompt is not
   modified.
-- Both message texts are read at load from `plan-mode-prompt.txt` and
-  `plan-mode-off-prompt.txt` beside the module; a missing or blank file
-  fails the extension load instead of injecting nothing. See
-  `adr/0011-plan-mode-prompt-file.md`.
-- `context` is keyed on the applied mode and drops the message type that
-  contradicts it: the read-only instruction while the mode is off, the
-  off-notice while it is on. A mode message does not outlive its mode.
+- While the mode stays applied, a compact reminder (the same
+  `customType: "plan-mode-context"`) is attached to *every* prompt, so the
+  mode is visible on the current turn and a reminder-free turn is not read
+  as mode-off. See `adr/0015-plan-mode-per-prompt-reminder.md`.
+- The message texts are read at load from `plan-mode-prompt.txt`,
+  `plan-mode-off-prompt.txt`, and `plan-mode-reminder.txt` beside the
+  module; a missing or blank file fails the extension load instead of
+  injecting nothing. See `adr/0011-plan-mode-prompt-file.md`.
+- `context` keeps exactly one mode message per request — the newest of the
+  type the applied mode calls for: the newest read-only message while the
+  mode is applied (dropping off-notices and older reminders), the newest
+  off-notice while it is off (dropping every read-only message). A
+  contradicting message never outlives its mode.
 - The footer always names the desired mode and marks it pending with `~`
   until the next prompt applies it: `[PLAN]` while plan mode is applied,
   `[~PLAN]` while enabling is pending, `[NORMAL]` in normal mode, and
@@ -125,8 +131,10 @@ does not swallow them and does not retry.
   `resolveTransition(desired, applied)` decides the next transition;
   `statusLabel(desired, applied)` renders the footer label;
   `statusToken(label)` picks the label's theme color;
-  `loadPlanInstruction(path)` reads and trims a prompt file; and
-  `resolveShortcut(cwd)` reads the settings.
+  `loadPlanInstruction(path)` reads and trims a prompt file;
+  `keepModeMessages(messages, applied)` keeps exactly the newest mode
+  message of the applied polarity; and `resolveShortcut(cwd)` reads the
+  settings.
 
 ## Plan-mode resume healing (ADR-0013)
 
@@ -149,7 +157,7 @@ every `before_agent_start` the extension keeps exactly one guideline in
 with the `var/` scratch exception; after the first lift → the "you may
 edit files again" guideline; never applied → nothing. Guidelines are
 recognized by their `Plan mode` prefix and re-synced per request, so they
-never stack and edited texts are replaced. The hidden one-time messages
-remain the transition signals; the guideline is the per-request state
-signal.
+never stack and edited texts are replaced. The hidden messages remain the
+transition signals, re-asserted per prompt while applied (ADR-0015); the
+guideline is the per-request state signal in the system prompt.
 

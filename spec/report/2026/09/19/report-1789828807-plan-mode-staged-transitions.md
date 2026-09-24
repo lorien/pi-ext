@@ -55,9 +55,12 @@
 
 ### Future-task notes
 
-- `[open]` The command/shortcut toggle, the `before_agent_start`
+- `[acted]` The command/shortcut toggle, the `before_agent_start`
   application, and the `context` filter remain wired to pi state and
   untested; only the pure helpers are covered.
+  — resolved 2026-09-24 by ADR-0015: the mock-pi suite covers the command
+  toggle, the per-prompt injection, and the `context` filter; the
+  shortcut registration stays a stub.
 - `[open]` Compaction and branch summaries can bake the read-only wording
   into summary messages the `context` filter cannot drop. The fix belongs
   in pi (excluding extension `custom_message` entries from the

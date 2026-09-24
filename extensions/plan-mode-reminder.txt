@@ -1,0 +1,10 @@
+<system-reminder>
+Plan mode is ACTIVE — read-only, except the project's `var/` scratch
+directory. This reminder is attached to every message while the mode is
+on: a message without one does NOT mean the mode is off.
+
+Do not create, modify, or delete files or system state through any tool,
+`bash` included — no redirection, `sed -i`, `tee`, `mv`, `rm`, `git`
+commit, or install. Analyze, inspect, and propose; if the user explicitly
+instructs you to execute, reply in one line that plan mode is on and wait.
+</system-reminder>

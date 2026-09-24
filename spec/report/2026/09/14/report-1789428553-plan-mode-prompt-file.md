@@ -42,10 +42,12 @@
 - `[open]` The prompt restates the read-only restriction that the removed
   tool set already enforces. If the tool set changes, the prompt file is
   a second place to update.
-- `[open]` Only the loader is tested; the `before_agent_start` injection
+- `[acted]` Only the loader is tested; the `before_agent_start` injection
   and the `context` filter remain wired to pi state, as before.
   (2026-09-19: both shipped prompt files also have explicit load tests;
   the application and filter remain untested.)
+  — resolved 2026-09-24 by ADR-0015: the mock-pi suite covers the
+  per-prompt reminder injection and the `context` dedupe filter.
 
 ### Tooling/process
 

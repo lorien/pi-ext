@@ -10,17 +10,23 @@
  *
  * Applying a transition swaps the active tool set — recording the previous
  * list and removing `edit` and `write` to enable the mode, restoring the
- * recorded list to disable it — and injects exactly one hidden message:
- * the read-only instruction when the mode turns on, a short notice that
- * the mode is off when it turns off. One message per mode change, never
- * one per prompt, so the instruction does not pile up in the session.
+ * recorded list to disable it — and injects a hidden message: the full
+ * read-only instruction when the mode turns on, a short notice that the
+ * mode is off when it turns off. While the mode stays on, a compact
+ * reminder (also `plan-mode-context`) is attached to *every* prompt, so
+ * the mode is visible on the current turn instead of only at its
+ * transition (ADR-0015): models read the mode from the reminder attached
+ * to the message they are answering, and a reminder-free turn otherwise
+ * reads as "mode off".
  *
- * The `context` hook is keyed on the *applied* mode and drops the message
- * type that contradicts it: while the mode is off, the read-only
- * instruction is filtered out of every request; while it is on, the
- * off-notice is. A mode message therefore never outlives its mode.
+ * The `context` hook keeps exactly one mode message per request — the
+ * newest of the type the applied mode calls for — so reminders do not
+ * pile up and a contradicting message never survives: while the mode is
+ * applied, the newest read-only message is kept and off-notices are
+ * dropped; while it is off, the newest off-notice is kept and read-only
+ * messages are dropped.
  *
- * Both message texts live in sibling files read at load; a missing or
+ * The message texts live in sibling files read at load; a missing or
  * blank file fails the extension load rather than injecting nothing.
  *
  * The footer always names the desired mode and marks it `~` until the
@@ -104,6 +110,14 @@ const PLAN_INSTRUCTION = loadPlanInstruction(PLAN_PROMPT_FILE);
 
 /** Notice injected as a hidden message when plan mode turns off. */
 const PLAN_OFF_INSTRUCTION = loadPlanInstruction(PLAN_OFF_PROMPT_FILE);
+
+/** File holding the reminder attached to every prompt while applied. */
+const PLAN_REMINDER_FILE = fileURLToPath(
+  new URL("./plan-mode-reminder.txt", import.meta.url),
+);
+
+/** Hidden reminder attached to every prompt while plan mode is applied. */
+export const PLAN_REMINDER = loadPlanInstruction(PLAN_REMINDER_FILE);
 
 /** File holding the standing system-prompt guideline while the mode is applied. */
 const PLAN_GUIDELINE_ON_FILE = fileURLToPath(
@@ -228,6 +242,32 @@ export function statusToken(label: string): StatusToken {
   if (label === "[NORMAL]") return "dim";
   if (label === "[~NORMAL]") return "text";
   return "mdHeading";
+}
+
+/**
+ * The plan-mode messages to keep for a request: exactly one, the newest of
+ * the type the applied mode calls for. While the mode is applied that is
+ * the newest read-only reminder and no off-notice; while it is off, the
+ * newest off-notice and no reminder. Unrelated messages pass through. This
+ * keeps re-asserted reminders from piling up and a contradicting message
+ * from surviving (ADR-0015).
+ */
+export function keepModeMessages<T>(messages: readonly T[], appliedOn: boolean): T[] {
+  const typeOf = (message: T): string | undefined =>
+    (message as { customType?: string } | null | undefined)?.customType;
+  const wanted = appliedOn ? PLAN_CONTEXT_TYPE : PLAN_OFF_TYPE;
+  let newest = -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    if (typeOf(messages[index] as T) === wanted) {
+      newest = index;
+      break;
+    }
+  }
+  return messages.filter((message, index) => {
+    const type = typeOf(message);
+    if (type !== PLAN_CONTEXT_TYPE && type !== PLAN_OFF_TYPE) return true;
+    return index === newest;
+  });
 }
 
 /** The `planMode.shortcut` value in one settings file, or undefined. */
@@ -362,6 +402,12 @@ export function planModeExtension(pi: ExtensionAPI): void {
       }
       refreshStatus(ctx);
       result = transitionMessage(transition);
+    } else if (appliedOn) {
+      // Re-assert the mode on every prompt, not only at its transition
+      // (ADR-0015): the model reads the mode from the reminder attached to
+      // the message it is answering, and a reminder-free turn otherwise
+      // reads as mode-off.
+      result = reminderMessage();
     }
 
     // Standing guideline (ADR-0014): re-synced on every prompt, never
@@ -393,6 +439,17 @@ export function planModeExtension(pi: ExtensionAPI): void {
     };
   }
 
+  /** The hidden reminder attached to every prompt while plan mode is applied. */
+  function reminderMessage() {
+    return {
+      message: {
+        customType: PLAN_CONTEXT_TYPE,
+        content: PLAN_REMINDER,
+        display: false,
+      },
+    };
+  }
+
   /**
    * Keep exactly one plan-mode guideline in `promptGuidelines`: the ON text
    * while applied, the OFF text only after the mode was used in this
@@ -411,14 +468,9 @@ export function planModeExtension(pi: ExtensionAPI): void {
     if (wanted) guidelines.push(wanted);
   }
 
-  pi.on("context", (event) => {
-    const dropped = appliedOn ? PLAN_OFF_TYPE : PLAN_CONTEXT_TYPE;
-    return {
-      messages: event.messages.filter(
-        (message) => (message as { customType?: string }).customType !== dropped,
-      ),
-    };
-  });
+  pi.on("context", (event) => ({
+    messages: keepModeMessages(event.messages, appliedOn),
+  }));
 }
 
 export default planModeExtension;

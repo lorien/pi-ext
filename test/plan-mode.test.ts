@@ -8,10 +8,14 @@ import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 import {
   DEFAULT_SHORTCUT,
+  keepModeMessages,
   loadPlanInstruction,
   missingWriteTools,
+  PLAN_CONTEXT_TYPE,
   PLAN_GUIDELINE_OFF,
   PLAN_GUIDELINE_ON,
+  PLAN_OFF_TYPE,
+  PLAN_REMINDER,
   planModeExtension,
   resolveShortcut,
   resolveTransition,
@@ -210,6 +214,9 @@ describe("shipped prompt files", () => {
   const offFile = fileURLToPath(
     new URL("../extensions/plan-mode-off-prompt.txt", import.meta.url),
   );
+  const reminderFile = fileURLToPath(
+    new URL("../extensions/plan-mode-reminder.txt", import.meta.url),
+  );
 
   test("the on-instruction file loads with content", () => {
     assert.ok(loadPlanInstruction(onFile).length > 0);
@@ -217,6 +224,10 @@ describe("shipped prompt files", () => {
 
   test("the off-notice file loads with content", () => {
     assert.ok(loadPlanInstruction(offFile).length > 0);
+  });
+
+  test("the reminder file loads with content", () => {
+    assert.ok(loadPlanInstruction(reminderFile).length > 0);
   });
 });
 
@@ -343,6 +354,12 @@ function makeMockPi(
         },
         ctx,
       ) as { message?: { customType?: string; content?: string } } | undefined,
+    fireContext: (messages: unknown[]) =>
+      (
+        handlers.get("context")?.({ type: "context", messages }, ctx) as
+          | { messages: unknown[] }
+          | undefined
+      )?.messages ?? [],
     toggle: () => commands[0]?.handler({}, ctx),
   };
 }
@@ -496,5 +513,88 @@ describe("standing guideline (ADR-0014)", () => {
     const empty = join(dir, "empty.txt");
     writeFileSync(empty, "   \n");
     assert.throws(() => loadPlanInstruction(empty), /is empty/);
+  });
+});
+
+describe("keepModeMessages (ADR-0015)", () => {
+  const context = { role: "custom", customType: PLAN_CONTEXT_TYPE };
+  const off = { role: "custom", customType: PLAN_OFF_TYPE };
+  const user = { role: "user" };
+  const note = { role: "custom", customType: "other" };
+
+  test("while applied, keeps the newest reminder and drops off-notices", () => {
+    assert.deepEqual(keepModeMessages([user, context, off, note, context], true), [
+      user,
+      note,
+      context,
+    ]);
+  });
+
+  test("while applied, drops every off-notice even with no reminder", () => {
+    assert.deepEqual(keepModeMessages([user, off, off], true), [user]);
+  });
+
+  test("while off, keeps the newest off-notice and drops every reminder", () => {
+    assert.deepEqual(keepModeMessages([user, context, note, off, off], false), [
+      user,
+      note,
+      off,
+    ]);
+  });
+
+  test("while off, drops every reminder even with no off-notice", () => {
+    assert.deepEqual(keepModeMessages([user, context], false), [user]);
+  });
+
+  test("passes through messages that carry no mode type", () => {
+    assert.deepEqual(keepModeMessages([user, note], true), [user, note]);
+    assert.deepEqual(keepModeMessages([], true), []);
+  });
+});
+
+describe("per-prompt reminder (ADR-0015)", () => {
+  test("re-asserts the ON reminder on every prompt while applied", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const pi = makeMockPi(all, all);
+    planModeExtension(pi.api);
+    await pi.fire("session_start");
+
+    pi.toggle();
+    const enabled = await pi.fireStart();
+    assert.equal(enabled?.message?.customType, PLAN_CONTEXT_TYPE);
+    assert.notEqual(enabled?.message?.content, PLAN_REMINDER);
+
+    const second = await pi.fireStart();
+    assert.equal(second?.message?.customType, PLAN_CONTEXT_TYPE);
+    assert.equal(second?.message?.content, PLAN_REMINDER);
+
+    const third = await pi.fireStart();
+    assert.equal(third?.message?.content, PLAN_REMINDER);
+
+    pi.toggle();
+    const disabled = await pi.fireStart();
+    assert.equal(disabled?.message?.customType, PLAN_OFF_TYPE);
+
+    // While off, no reminder is attached to later prompts.
+    assert.equal(await pi.fireStart(), undefined);
+  });
+
+  test("the context filter keeps only the newest mode message", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const pi = makeMockPi(all, all);
+    planModeExtension(pi.api);
+    await pi.fire("session_start");
+
+    pi.toggle();
+    await pi.fireStart(); // enable applies
+
+    const context = { role: "custom", customType: PLAN_CONTEXT_TYPE };
+    const off = { role: "custom", customType: PLAN_OFF_TYPE };
+    const user = { role: "user" };
+    assert.deepEqual(pi.fireContext([user, context, off, context]), [user, context]);
+
+    pi.toggle();
+    await pi.fireStart(); // disable applies
+    assert.deepEqual(pi.fireContext([user, context, off, context]), [user, off]);
   });
 });

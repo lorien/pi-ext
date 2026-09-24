@@ -17,8 +17,11 @@ pi-ext/
 ├── package.json          # pi manifest (declares extensions + skills)
 ├── tsconfig.json
 ├── extensions/
+│   ├── plan-mode-guideline-off.txt
+│   ├── plan-mode-guideline-on.txt
 │   ├── plan-mode-off-prompt.txt
 │   ├── plan-mode-prompt.txt
+│   ├── plan-mode-reminder.txt
 │   ├── plan-mode.ts
 │   └── zai-web-search.ts
 └── skills/               # each skill is a directory with a SKILL.md
@@ -146,22 +149,26 @@ agreeing on a plan before anything is changed.
   hidden instruction tells the model it is in a read-only phase and must
   answer the request as asked — a plan is appended only when the user
   asked for a change or for a plan.
+- A compact reminder is attached to every prompt while the mode is on, so
+  the model never reads a reminder-free turn as "mode off"; the session
+  keeps only the newest one, so they do not accumulate
+  ([ADR-0015](./spec/docs/adr/0015-plan-mode-per-prompt-reminder.md)).
 - Leaving plan mode injects a one-time hidden notice that the mode is off
   and the write tools are back, so the model knows it may act instead of
   proposing yet another plan.
-- One message is injected per mode change, not per prompt, so the
-  instruction is never repeated through the session.
 - The footer names the mode you toggled to and marks it `~` until your
   next prompt applies it: `[PLAN]` in plan mode, `[~PLAN]` while
   enabling is pending, `[NORMAL]` in normal mode, and `[~NORMAL]` while
   leaving is pending. Plan labels are colored `mdHeading`, `[NORMAL]` is
   dimmed to match the rest of the footer, and `[~NORMAL]` uses the
   plain text color.
-- Both message texts are read at load from files beside the module:
+- The message texts are read at load from files beside the module:
   [`plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt) for the
-  on-instruction and
+  on-instruction,
   [`plan-mode-off-prompt.txt`](./extensions/plan-mode-off-prompt.txt)
-  for the off-notice. Edit either file to change what plan mode tells the
+  for the off-notice, and
+  [`plan-mode-reminder.txt`](./extensions/plan-mode-reminder.txt) for the
+  per-prompt reminder. Edit a file to change what plan mode tells the
   model; a missing or blank file stops the extension from loading.
 - The mode is in memory only: restarting pi or resuming a session starts
   in normal mode.
