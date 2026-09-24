@@ -48,14 +48,18 @@
   the global pi settings, and both e2e checks pass. The live search also
   ran through the tool itself inside a pi session, which confirms the
   settings source works end to end with no reload.
-- `[open]` The endpoint is a module constant in `runZaiWebSearch()`, so
+- `[acted]` The endpoint is a module constant in `runZaiWebSearch()`, so
   the request body and the parameter mapping have no offline coverage and
   cannot be stubbed without exporting the endpoint and threading it
   through. If request-body regressions become a real risk, make the
   transport injectable and cover it with a stub, keeping the live check
-  for the contract.
-- `[open]` The live check spends one search request per run. If it is ever
-  wired into automation, that cost recurs.
+  for the contract. Resolved 2026-09-25: the extension was deprecated and
+  moved to `deprecated/` (ADR-0016), so the risk is retired with it; the
+  item is moot unless the module is re-enabled.
+- `[acted]` The live check spends one search request per run. If it is ever
+  wired into automation, that cost recurs. Resolved 2026-09-25: the
+  extension was deprecated and moved to `deprecated/` (ADR-0016); the
+  check is only worth running when the retired module itself changes.
 - `[open]` Nothing runs any check automatically: no hook and no CI. The
   live check makes that more visible, since a scheduled run is the only
   way it would ever be exercised without a person asking.

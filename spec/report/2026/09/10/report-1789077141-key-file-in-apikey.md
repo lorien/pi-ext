@@ -43,14 +43,18 @@
 
 ### Future-task notes
 
-- `[open]` The `file:` path is read on every key resolution, which is every
+- `[acted]` The `file:` path is read on every key resolution, which is every
   tool call. That is a small read, but it is repeated work; caching would
-  need an invalidation story and is not worth it at this size.
-- `[open]` Nothing verifies that the referenced file has restrictive
+  need an invalidation story and is not worth it at this size. Resolved
+  2026-09-25: the extension was deprecated and moved to `deprecated/`
+  (ADR-0016); the trade-off is retired with the module.
+- `[acted]` Nothing verifies that the referenced file has restrictive
   permissions. A key file readable by other users is accepted silently.
-- `[open]` The environment variable takes no `file:` form. That is
+  Resolved 2026-09-25: same deprecation (ADR-0016); the module is no
+  longer loaded by the package.
+- `[acted]` The environment variable takes no `file:` form. That is
   deliberate: `file:` is settings syntax. Worth revisiting only if someone
-  asks for it.
+  asks for it. Resolved 2026-09-25: same deprecation (ADR-0016).
 
 ### Tooling/process
 

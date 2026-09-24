@@ -1,6 +1,11 @@
 /**
  * z.ai Web Search — direct REST tool for pi (no MCP).
  *
+ * Deprecated: this extension is no longer shipped by the package. It moved out
+ * of `extensions/` so the pi manifest does not load it; see
+ * `spec/docs/adr/0016-deprecate-zai-web-search.md`. It is kept in `deprecated/`
+ * for reference and can still be loaded by hand with `pi -e ./deprecated/zai-web-search.ts`.
+ *
  * Calls https://api.z.ai/api/paas/v4/web_search with the `search-prime`
  * engine — the same engine behind the z.ai web_search MCP server, but without
  * the MCP handshake/session layer.

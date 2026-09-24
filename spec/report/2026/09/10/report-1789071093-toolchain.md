@@ -42,9 +42,11 @@
   manual, and there is no CI workflow, so the gate depends on the person
   or agent remembering. A pre-commit hook or a CI workflow would make it
   real.
-- `[open]` The extension still reads its key from a settings file without
+- `[acted]` The extension still reads its key from a settings file without
   schema validation, per ADR-0001. That reliance is on pi's behavior, not
-  on anything this repository controls.
+  on anything this repository controls. Resolved 2026-09-25: the
+  extension was deprecated and moved to `deprecated/` (ADR-0016), so the
+  shipped package no longer carries the reliance.
 
 ### Tooling/process
 

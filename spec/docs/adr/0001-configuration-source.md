@@ -1,8 +1,8 @@
 # ADR-0001: Key configuration source
 
 Date: 2026-09-10
-Status: accepted (revised by ADR-0008: the settings value may be a
-`file:` reference to a file holding the key; the rest still stands)
+Status: accepted (revised by ADR-0008, component deprecated by ADR-0016:
+the settings value may be a `file:` reference to a file holding the key)
 
 ## Context
 
@@ -38,7 +38,7 @@ The settings source depends on pi tolerating unknown keys in
 validation on read, unknown keys preserved on write, no unknown-key
 warning. It is undocumented behavior, so the environment variable remains
 the source that depends on no pi behavior; see
-`spec/docs/configuration.md`.
+`deprecated/CONFIGURATION.md`.
 
 ## Alternatives rejected
 

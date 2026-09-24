@@ -1,7 +1,7 @@
 # ADR-0007: End-to-end check against the live API
 
 Date: 2026-09-10
-Status: accepted
+Status: accepted (component deprecated by ADR-0016)
 
 ## Context
 

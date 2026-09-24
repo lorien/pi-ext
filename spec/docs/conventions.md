@@ -68,8 +68,7 @@ Before every commit, run the local-content check in `testing.md`.
   `spec/skills/report_tracking.md`.
 - `spec/skills/` holds the workflow files. They are copied verbatim from
   the bootstrap procedure and are not renamed or edited.
-- File names are lower-case kebab-case: `configuration.md`,
-  `0001-configuration-source.md`.
+- File names are lower-case kebab-case: `0001-configuration-source.md`.
 - Describe the intended design. Never record a known defect as if it were
   a design decision; add a task to `plan.md` instead.
 
@@ -117,12 +116,12 @@ Style is enforced, not just described; see
 - Biome does not process markdown, so the markdown rules above remain
   checked by hand (`testing.md`).
 - Keep pure helpers exported so they can be tested without starting pi.
-  `resolveZaiKey()` in `extensions/zai-web-search.ts` is the model: it
-  takes plain arguments and returns a plain value.
-- Keep the pi-facing wiring thin: the default export registers the tool
-  and delegates to the pure helpers.
+  `resolveShortcut()` in `extensions/plan-mode.ts` is the model: it takes
+  plain arguments and returns a plain value.
+- Keep the pi-facing wiring thin: the default export registers what the
+  extension provides and delegates to the pure helpers.
 - Never read a credential from a hard-coded path. Resolve it at runtime
-  through the sources listed in `configuration.md`.
+  from the environment or from pi settings files.
 
 ## Architecture decisions
 

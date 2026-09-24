@@ -19,9 +19,8 @@ source with no build step.
   paths, private home-relative paths, or generated files that record a
   local resolution. This is a public project for generic use, and it must
   not disclose anything about the machine it was written on. Secrets are
-  resolved at runtime from the environment or from pi settings files; see
-  `configuration.md`. The full rule is in `conventions.md`, and its check
-  is in `testing.md`.
+  resolved at runtime from the environment or from pi settings files. The
+  full rule is in `conventions.md`, and its check is in `testing.md`.
 - No bundling, no generated artifacts. pi loads the TypeScript sources
   directly, so the sources are the artifact. `dist/` and `node_modules/`
   are ignored.
@@ -45,15 +44,17 @@ source with no build step.
   `npm run lint` and `npm run format`. It covers TypeScript and JSON, not
   markdown. See `adr/0004-biome-for-lint-and-format.md`.
 - `extensions/` — one TypeScript file per extension, plus any data file
-  the extension reads at load. `zai-web-search.ts` provides the
-  `zai_web_search` tool; `plan-mode.ts` adds the `/plan` read-only mode
-  and reads its message texts from `plan-mode-prompt.txt` and
+  the extension reads at load. `plan-mode.ts` adds the `/plan` read-only
+  mode and reads its message texts from `plan-mode-prompt.txt` and
   `plan-mode-off-prompt.txt` beside it.
+- `deprecated/` — extensions that are no longer shipped, kept for
+  reference and re-enablement by hand. The pi manifest does not declare
+  this directory, so nothing in it is loaded. It currently holds the
+  retired `zai-web-search.ts`, its unit test, its live end-to-end check
+  (run by `npm run test:e2e`), and `CONFIGURATION.md`, the documentation
+  of the key resolution it used. See `adr/0016-deprecate-zai-web-search.md`.
 - `test/` — the unit tests, run by Node's built-in test runner through
   `npm test`. See `testing.md` and `adr/0003-test-runner.md`.
-- `e2e/` — the live end-to-end check, run by `npm run test:e2e`. It is
-  kept out of `test/` so a bare `node --test` cannot fire real requests;
-  see `adr/0007-end-to-end-check.md`.
 - `skills/` — skill directories, each with a `SKILL.md`. Currently empty;
   the directory is kept by `.gitkeep` because the manifest declares it.
 - `spec/docs/` — the internal design documents, this knowledge base.

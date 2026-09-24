@@ -1,5 +1,10 @@
 # Configuration
 
+> **Deprecated.** This document describes the configuration of the
+> `zai_web_search` extension, which is no longer shipped; it moved to
+> `deprecated/` and is not loaded by pi. See `adr/0016-deprecate-zai-web-search.md`.
+> The text below is kept for anyone re-enabling the extension by hand.
+
 The `zai_web_search` tool needs a z.ai API key. No key is stored in this
 repository; one is resolved at call time, and the first source that yields
 a non-empty value wins.
@@ -78,7 +83,7 @@ no pi behavior at all.
 ## Absent mechanisms
 
 These were considered and deliberately not implemented; see
-`adr/0001-configuration-source.md`:
+[ADR-0001](../spec/docs/adr/0001-configuration-source.md):
 
 - No CLI flag. The extension registers no flags.
 - No key-file path variable, and no default path to a key file. A path

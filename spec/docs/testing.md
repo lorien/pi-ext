@@ -7,8 +7,8 @@ this the first item of the final list.
 
 - `npm install` — installs the development dependencies (`typescript`,
   `@biomejs/biome`, `@types/node`).
-- `npm run typecheck` — runs `tsc --noEmit` over `extensions/**/*.ts` and
-  `test/**/*.ts`.
+- `npm run typecheck` — runs `tsc --noEmit` over `extensions/**/*.ts`,
+  `deprecated/**/*.ts`, and `test/**/*.ts`.
 - `npm test` — runs the unit tests.
 - `npm run lint` — runs Biome over the TypeScript and JSON files.
 - `npm run check:md` — runs the markdown checker.
@@ -65,9 +65,13 @@ are documented in `adr/0006-markdown-checker.md`.
 
 ## End-to-end check
 
-`npm run test:e2e` runs `e2e/*.e2e.ts` against the live z.ai API. It is not
-part of `npm test` or `npm run check`, because it needs a real key, spends
-quota, and depends on the network.
+The live end-to-end check exercises the deprecated `zai_web_search`
+extension and lives with it in `deprecated/`; `npm run test:e2e` runs
+`deprecated/*.e2e.ts`. It is not part of `npm test` or `npm run check`,
+because it needs a real key, spends quota, and depends on the network.
+See `adr/0016-deprecate-zai-web-search.md` for why the extension was
+retired and `adr/0007-end-to-end-check.md` for why the check is not under
+`test/`.
 
 What it does:
 
@@ -81,14 +85,14 @@ What it does:
   case needs no configured key, so it runs even when the live suite is
   skipped, and it confirms the check is really talking to the API.
 
-Placement is deliberate: the files live in `e2e/`, not under `test/`. Node
-treats every file under a `test/` directory as a test file, so a bare
-`node --test` would run them and make real requests. A bare `node --test`
-collects only the unit suite.
+Placement is deliberate: the file lives in `deprecated/`, not under
+`test/`. Node treats every file under a `test/` directory as a test file,
+so a bare `node --test` would run it and make real requests. A bare
+`node --test` collects only the unit suite.
 
-The positive path cannot run without a key, so it is the one part of the
-repository that is verified by hand. Run it after any change to
-`runZaiWebSearch()`, the request body, or the response handling:
+The positive path cannot run without a key, so it is verified by hand.
+Because the extension is deprecated, the check is only worth running when
+the module itself is changed:
 
 ```bash
 npm run test:e2e
@@ -98,20 +102,6 @@ If it skips and a key is configured, the reason is printed next to the
 skipped suite.
 
 ## Manual smoke test
-
-The tool calls a live API, so the smoke test is manual and needs a key:
-
-```bash
-pi -e ./extensions/zai-web-search.ts
-```
-
-Then ask for something that requires current information, and confirm that
-the tool is selected and that results come back formatted as numbered
-entries with a link and a snippet.
-
-To check only that the module loads and registers its tool, import it and
-call the default export with a stub object that records
-`registerTool`. This needs no key and no network.
 
 Plan mode needs no key. Load it with `pi -e ./extensions/plan-mode.ts`
 and confirm the `[NORMAL]` status shows. Run `/plan` and confirm the
@@ -143,33 +133,20 @@ Facts that matter when adding tests:
 - The sources are executed, not transformed. TypeScript syntax that needs
   a transformation, such as `enum` and parameter properties, cannot be
   used.
-- Tests live in `test/`, never in `extensions/`. The `pi` manifest
-  declares `extensions/` as an extension directory, so a `*.test.ts` file
-  there could be loaded as an extension.
-- `npm run typecheck` covers `test/**/*.ts` as well as the extension, so
-  the tests are type-checked too.
+- Tests live in `test/`, never in `extensions/` or `deprecated/`. The `pi`
+  manifest declares `extensions/` as an extension directory, so a
+  `*.test.ts` file there could be loaded as an extension. The deprecated
+  suite lives beside its subject in `deprecated/` for a related reason: a
+  bare `node --test` must not collect it together with the unit suite.
+- `npm run typecheck` covers `test/**/*.ts`, `deprecated/**/*.ts`, and
+  the extension, so the tests are type-checked too.
 
-`resolveZaiKey()` and `withoutWriteTools()` are the subjects, because
-they are pure enough to test without starting pi. The z.ai suite covers:
-
-- the environment key, including trimming, and that it wins over both
-  settings files
-- project settings winning over global settings
-- the global settings file being read when the project has none, and when
-  no working directory is given
-- a settings file that holds other settings alongside `zaiWebSearch`
-- a settings file that starts with a byte-order mark
-- fall-through for an absent file, a missing `zaiWebSearch` section, a
-  non-string `apiKey`, a whitespace-only `apiKey`, a section that is not
-  an object, and a whitespace-only environment variable
-- a `file:` reference: reading the key from the file, `~` expansion,
-  relative resolution against the settings file, a `file:` that is not at
-  the start staying literal, and the errors for a path that does not
-  exist, an empty file, and a prefix with no path
-- the error naming every source when no key is configured
-- the error naming the file when a settings file cannot be parsed
-
-The plan-mode suite covers the standing guideline (ADR-0014): no
+`withoutWriteTools()` is the unit-tested subject, because it is pure
+enough to test without starting pi. The retired `resolveZaiKey()` suite
+moved with the extension to `deprecated/zai-web-search.test.ts` and is no
+longer part of `npm test`; it still type-checks with the module and runs
+if invoked there directly. The plan-mode suite covers the standing
+guideline (ADR-0014): no
 guideline before the mode is ever applied; the ON guideline (with the
 `var/` allowance) on every prompt while applied without stacking; the OFF
 guideline after the first lift, kept on later prompts and swapped back on

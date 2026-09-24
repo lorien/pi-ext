@@ -15,5 +15,5 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["extensions/**/*.ts", "test/**/*.ts", "e2e/**/*.ts"]
+  "include": ["extensions/**/*.ts", "deprecated/**/*.ts", "test/**/*.ts", "e2e/**/*.ts"]
 }

@@ -4,11 +4,13 @@ A [pi](https://pi.dev) package hosting custom extensions and skills.
 
 ## Contents
 
-- Extension `zai_web_search` — live web search via the z.ai `search-prime`
-  engine, called as direct REST rather than through MCP.
 - Extension `plan-mode` — a `/plan` toggle for a read-only exploring and
   analysis mode.
 - Skills — none yet. Skills live in [`skills/`](./skills).
+
+The `zai_web_search` extension (live web search via the z.ai REST API) is
+deprecated: it moved to [`deprecated/`](./deprecated) and is no longer loaded
+by the package.
 
 ## Layout
 
@@ -23,8 +25,8 @@ pi-ext/
 │   ├── plan-mode-off-reminder.txt
 │   ├── plan-mode-prompt.txt
 │   ├── plan-mode-reminder.txt
-│   ├── plan-mode.ts
-│   └── zai-web-search.ts
+│   └── plan-mode.ts
+├── deprecated/           # disabled extensions kept for reference
 └── skills/               # each skill is a directory with a SKILL.md
 ```
 
@@ -50,84 +52,6 @@ pi install git:github.com/<you>/pi-ext
 ```
 
 After installing, run `/reload` (or restart pi) so the extensions load.
-
-## Configuration — `zai_web_search`
-
-The key is resolved in this order:
-
-1. `$ZAI_API_KEY` (environment)
-2. `<project>/.pi/settings.json`
-3. `<agent-dir>/settings.json` (default `~/.pi/agent/settings.json`, which
-   honors `$PI_CODING_AGENT_DIR`)
-
-### Via `settings.json`
-
-Add a `zaiWebSearch` section to either file. `apiKey` is either the key
-itself, or a `file:` reference to a file holding it:
-
-```json
-{
-  "zaiWebSearch": {
-    "apiKey": "your-key"
-  }
-}
-```
-
-```json
-{
-  "zaiWebSearch": {
-    "apiKey": "file:<path>"
-  }
-}
-```
-
-The `file:` form keeps the secret out of the settings file, which gets
-synced, backed up, and shared.
-
-- Only a leading `file:` starts a reference. A literal key that contains
-  `file:` elsewhere is still a literal key.
-- Paths follow pi's rule for settings paths: `~` and absolute paths work,
-  and a relative path resolves against the directory holding the settings
-  file.
-- The file is read on each tool call and its contents are trimmed, so
-  rotating the key needs no `/reload`.
-- A reference that cannot be read, names an empty file, or carries no
-  path throws with the path in the message instead of falling through to
-  the next source.
-- `$ZAI_API_KEY` is always a literal key; `file:` is settings syntax
-  only.
-
-Project settings win over global ones, so you can scope a key to a single
-repository with `.pi/settings.json` (add `.pi/` to `.gitignore` if you do
-not want to commit it).
-
-`zaiWebSearch` is this extension's own key — pi has no schema for
-extension settings. This is safe to add: pi parses `settings.json` without
-validation, and its write path merges into the file's existing contents,
-so unknown keys are preserved rather than stripped. No warning is emitted
-for unknown keys.
-
-### Via environment
-
-Useful for one-off runs or CI:
-
-```bash
-ZAI_API_KEY=your-key pi
-export ZAI_API_KEY=your-key   # e.g. in ~/.bashrc
-```
-
-If no key is found, the tool fails with a message naming both settings paths it checked.
-
-### Tool parameters
-
-- `query` — string, required. The search query.
-- `count` — integer, default `10`. Between 1 and 50 results.
-- `recency` — enum, default `noLimit`. One of `oneDay`, `oneWeek`,
-  `oneMonth`, `oneYear`, `noLimit`.
-- `domain` — string. Restrict results to a domain, for example
-  `doc.rust-lang.org`. This is best effort.
-- `engine` — enum, default `search-prime`. One of `search-prime`,
-  `search_pro_jina`, `search_pro`, `search_std`.
 
 ## Plan mode
 
@@ -215,9 +139,12 @@ npm run typecheck    # tsc --noEmit
 Load the working tree directly while iterating:
 
 ```bash
-pi -e ./extensions/zai-web-search.ts
 pi -e ./extensions/plan-mode.ts
 ```
+
+The deprecated `zai_web_search` extension can still be loaded by hand with
+`pi -e ./deprecated/zai-web-search.ts`; its configuration is kept in
+[`deprecated/CONFIGURATION.md`](./deprecated/CONFIGURATION.md).
 
 ## License
 

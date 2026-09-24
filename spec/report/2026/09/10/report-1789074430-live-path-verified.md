@@ -43,11 +43,15 @@
   longer: ADR-0008 puts `file:<path>` in `apiKey`, so the settings file
   holds a reference and the secret stays in a single file. The mode of the
   settings file no longer matters for this credential.
-- `[open]` The live check still spends one search request per run, and
-  nothing runs it on a schedule or in automation.
-- `[open]` `runZaiWebSearch()` remains untestable offline because its
+- `[acted]` The live check still spends one search request per run, and
+  nothing runs it on a schedule or in automation. Resolved 2026-09-25:
+  the extension was deprecated and moved to `deprecated/` (ADR-0016), so
+  the check is no longer part of the regular workflow.
+- `[acted]` `runZaiWebSearch()` remains untestable offline because its
   endpoint is a module constant; see
-  `report-1789071803-e2e-check.md`.
+  `report-1789071803-e2e-check.md`. Resolved 2026-09-25: the extension
+  was deprecated and moved to `deprecated/` (ADR-0016); the coverage gap
+  is retired with the module.
 
 ### Tooling/process
 

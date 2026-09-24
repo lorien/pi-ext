@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, test } from "node:test";
 
-import { resolveZaiKey } from "../extensions/zai-web-search.ts";
+import { resolveZaiKey } from "./zai-web-search.ts";
 
 const ENV_KEY = "ZAI_API_KEY";
 const ENV_AGENT_DIR = "PI_CODING_AGENT_DIR";

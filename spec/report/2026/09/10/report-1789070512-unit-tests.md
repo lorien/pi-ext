@@ -39,16 +39,21 @@ directory with `$PI_CODING_AGENT_DIR` to a temporary path.
 
 ### Future-task notes
 
-- `[open]` `runZaiWebSearch()` has no coverage: the request body, the
+- `[acted]` `runZaiWebSearch()` has no coverage: the request body, the
   timeout and abort handling, and the error mapping are untested.
   Covering them needs request-building extracted so the request can be
-  inspected without sending it, per `testing.md`.
-- `[open]` `formatSearchResults()` is untested, including the empty-result
-  case and the whitespace collapsing.
-- `[open]` The tool wiring is untested: that `execute` passes `ctx.cwd`
+  inspected without sending it, per `testing.md`. Resolved 2026-09-25:
+  the extension was deprecated and moved to `deprecated/` (ADR-0016);
+  the suite moved with it and is out of `npm test`, so the gap is
+  retired rather than filled.
+- `[acted]` `formatSearchResults()` is untested, including the empty-result
+  case and the whitespace collapsing. Resolved 2026-09-25: same
+  deprecation (ADR-0016); the suite is retired out of `npm test`.
+- `[acted]` The tool wiring is untested: that `execute` passes `ctx.cwd`
   into `resolveZaiKey()`, and that the result details carry the raw
   response. A stub `pi` object with a recording `registerTool` is enough,
-  as used when checking registration by hand.
+  as used when checking registration by hand. Resolved 2026-09-25: same
+  deprecation (ADR-0016); the module is no longer loaded by the package.
 
 ### Tooling/process
 

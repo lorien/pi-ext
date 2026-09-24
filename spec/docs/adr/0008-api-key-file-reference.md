@@ -1,7 +1,7 @@
 # ADR-0008: A `file:` reference inside `apiKey`
 
 Date: 2026-09-10
-Status: accepted
+Status: accepted (component deprecated by ADR-0016)
 
 ## Context
 
@@ -72,5 +72,5 @@ that path.
   steered by configuration, and the named path is only as protected as the
   settings file itself.
 - The `file:` prefix is one more thing for a user to know about. It is
-  documented in `configuration.md` and covered by unit tests, including
-  that a non-leading `file:` stays literal.
+  documented in `deprecated/CONFIGURATION.md` and covered by unit tests,
+  including that a non-leading `file:` stays literal.

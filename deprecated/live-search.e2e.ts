@@ -5,15 +5,16 @@ import {
   formatSearchResults,
   resolveZaiKey,
   runZaiWebSearch,
-} from "../extensions/zai-web-search.ts";
+} from "./zai-web-search.ts";
 
 /**
- * Live end-to-end check. It calls the z.ai API and spends quota, so it is not
- * part of `npm test`; run it with `npm run test:e2e`.
+ * Live end-to-end check for the deprecated `zai_web_search` extension. It calls
+ * the z.ai API and spends quota, so it is not part of `npm test`; run it with
+ * `npm run test:e2e`.
  *
- * The file lives in `e2e/` rather than under `test/` on purpose. Node treats
- * every file under a `test/` directory as a test file, so a bare
- * `node --test` would run this one and make real requests.
+ * The file lives in `deprecated/` (the extension it exercises moved here), not
+ * under `test/`. Node treats every file under a `test/` directory as a test
+ * file, so a bare `node --test` would run this one and make real requests.
  */
 
 const REQUEST_TIMEOUT_MS = 60_000;
