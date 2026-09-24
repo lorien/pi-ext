@@ -14,6 +14,7 @@ import {
   PLAN_CONTEXT_TYPE,
   PLAN_GUIDELINE_OFF,
   PLAN_GUIDELINE_ON,
+  PLAN_OFF_REMINDER,
   PLAN_OFF_TYPE,
   PLAN_REMINDER,
   planModeExtension,
@@ -217,6 +218,9 @@ describe("shipped prompt files", () => {
   const reminderFile = fileURLToPath(
     new URL("../extensions/plan-mode-reminder.txt", import.meta.url),
   );
+  const offReminderFile = fileURLToPath(
+    new URL("../extensions/plan-mode-off-reminder.txt", import.meta.url),
+  );
 
   test("the on-instruction file loads with content", () => {
     assert.ok(loadPlanInstruction(onFile).length > 0);
@@ -228,6 +232,10 @@ describe("shipped prompt files", () => {
 
   test("the reminder file loads with content", () => {
     assert.ok(loadPlanInstruction(reminderFile).length > 0);
+  });
+
+  test("the off-reminder file loads with content", () => {
+    assert.ok(loadPlanInstruction(offReminderFile).length > 0);
   });
 });
 
@@ -553,7 +561,15 @@ describe("keepModeMessages (ADR-0015)", () => {
 });
 
 describe("per-prompt reminder (ADR-0015)", () => {
-  test("re-asserts the ON reminder on every prompt while applied", async () => {
+  test("carries no reminder before plan mode is ever applied", async () => {
+    const all = ["read", "bash", "edit", "write"];
+    const pi = makeMockPi(all, all);
+    planModeExtension(pi.api);
+    await pi.fire("session_start");
+    assert.equal(await pi.fireStart(), undefined);
+  });
+
+  test("re-asserts the mode on every prompt, on and off", async () => {
     const all = ["read", "bash", "edit", "write"];
     const pi = makeMockPi(all, all);
     planModeExtension(pi.api);
@@ -574,9 +590,18 @@ describe("per-prompt reminder (ADR-0015)", () => {
     pi.toggle();
     const disabled = await pi.fireStart();
     assert.equal(disabled?.message?.customType, PLAN_OFF_TYPE);
+    assert.notEqual(disabled?.message?.content, PLAN_OFF_REMINDER);
 
-    // While off, no reminder is attached to later prompts.
-    assert.equal(await pi.fireStart(), undefined);
+    // After the lift, the OFF state is re-asserted on every prompt too.
+    const afterLift = await pi.fireStart();
+    assert.equal(afterLift?.message?.customType, PLAN_OFF_TYPE);
+    assert.equal(afterLift?.message?.content, PLAN_OFF_REMINDER);
+
+    // Re-enabling swaps back to the read-only reminder.
+    pi.toggle();
+    const reEnabled = await pi.fireStart();
+    assert.equal(reEnabled?.message?.customType, PLAN_CONTEXT_TYPE);
+    assert.notEqual(reEnabled?.message?.content, PLAN_OFF_REMINDER);
   });
 
   test("the context filter keeps only the newest mode message", async () => {

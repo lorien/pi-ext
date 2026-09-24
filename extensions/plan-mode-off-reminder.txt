@@ -1,0 +1,10 @@
+<system-reminder>
+Plan mode is OFF — you may create, edit, and delete files again. This
+reminder is attached to every message after plan mode has been lifted in
+this session.
+
+The `var/`-only scratch rule no longer applies: the normal project
+workflow is in effect. If the user's request is an instruction to act,
+execute it now instead of proposing or refining another plan, and do not
+restate a plan unless the user asks for one.
+</system-reminder>

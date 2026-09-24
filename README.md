@@ -20,6 +20,7 @@ pi-ext/
 │   ├── plan-mode-guideline-off.txt
 │   ├── plan-mode-guideline-on.txt
 │   ├── plan-mode-off-prompt.txt
+│   ├── plan-mode-off-reminder.txt
 │   ├── plan-mode-prompt.txt
 │   ├── plan-mode-reminder.txt
 │   ├── plan-mode.ts
@@ -149,9 +150,11 @@ agreeing on a plan before anything is changed.
   hidden instruction tells the model it is in a read-only phase and must
   answer the request as asked — a plan is appended only when the user
   asked for a change or for a plan.
-- A compact reminder is attached to every prompt while the mode is on, so
-  the model never reads a reminder-free turn as "mode off"; the session
-  keeps only the newest one, so they do not accumulate
+- A compact reminder is attached to every prompt so the model never reads
+  a reminder-free turn as the other mode: the read-only reminder while
+  plan mode is on, and — once plan mode has been used — a "plan mode is
+  off, act now" reminder after it is lifted. The session keeps only the
+  newest one, so they do not accumulate
   ([ADR-0015](./spec/docs/adr/0015-plan-mode-per-prompt-reminder.md)).
 - Leaving plan mode injects a one-time hidden notice that the mode is off
   and the write tools are back, so the model knows it may act instead of
@@ -166,10 +169,13 @@ agreeing on a plan before anything is changed.
   [`plan-mode-prompt.txt`](./extensions/plan-mode-prompt.txt) for the
   on-instruction,
   [`plan-mode-off-prompt.txt`](./extensions/plan-mode-off-prompt.txt)
-  for the off-notice, and
+  for the off-notice,
   [`plan-mode-reminder.txt`](./extensions/plan-mode-reminder.txt) for the
-  per-prompt reminder. Edit a file to change what plan mode tells the
-  model; a missing or blank file stops the extension from loading.
+  per-prompt on reminder, and
+  [`plan-mode-off-reminder.txt`](./extensions/plan-mode-off-reminder.txt)
+  for the per-prompt off reminder. Edit a file to change what plan mode
+  tells the model; a missing or blank file stops the extension from
+  loading.
 - The mode is in memory only: restarting pi or resuming a session starts
   in normal mode.
 - `bash` is not restricted, so plan mode is a guardrail, not a sandbox.

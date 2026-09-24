@@ -179,8 +179,10 @@ the mode; the loader still rejects empty guideline files.
 The plan-mode suite covers per-prompt re-assertion (ADR-0015):
 `keepModeMessages()` keeps exactly the newest mode message of the applied
 polarity and drops the contradicting one, and a mock-pi end-to-end shows
-the ON reminder returned on every prompt while applied, no reminder while
-off, and the context filter keeping only the newest mode message.
+no reminder before the mode is ever applied, the ON reminder returned on
+every prompt while applied, the OFF reminder returned on every prompt
+after the lift, and the context filter keeping only the newest mode
+message.
 
 The plan-mode suite covers resume healing (ADR-0013):
 `missingWriteTools()` / `withConfiguredWriteTools()`, plus a mock-pi
@@ -205,7 +207,7 @@ plan mode is applied, `[~PLAN]` while enabling is pending, `[NORMAL]` in
 normal mode, and `[~NORMAL]` while a lift is pending. It also covers
 `statusToken()`: `dim` for `[NORMAL]`, `text` for `[~NORMAL]`, and
 `mdHeading` for the plan labels.
-It also asserts that all three shipped prompt files load with content. The
+It also asserts that all four shipped prompt files load with content. The
 rest of the extension — the command and shortcut toggle,,
 the `session_start` shortcut registration, the `before_agent_start`
 application, and the `context` filter — is wired to pi state and has no

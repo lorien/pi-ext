@@ -106,14 +106,17 @@ does not swallow them and does not retry.
   plan. The off-notice tells the model the mode is lifted and that an
   instruction to act should be executed. The system prompt is not
   modified.
-- While the mode stays applied, a compact reminder (the same
-  `customType: "plan-mode-context"`) is attached to *every* prompt, so the
-  mode is visible on the current turn and a reminder-free turn is not read
-  as mode-off. See `adr/0015-plan-mode-per-prompt-reminder.md`.
+- A compact reminder is attached to *every* prompt so the mode is visible
+  on the current turn and a reminder-free turn is not read as the opposite
+  mode: the read-only reminder (`customType: "plan-mode-context"`) while
+  applied, and — once the mode has been used — the off reminder
+  (`customType: "plan-mode-off"`) while it is off. See
+  `adr/0015-plan-mode-per-prompt-reminder.md`.
 - The message texts are read at load from `plan-mode-prompt.txt`,
-  `plan-mode-off-prompt.txt`, and `plan-mode-reminder.txt` beside the
-  module; a missing or blank file fails the extension load instead of
-  injecting nothing. See `adr/0011-plan-mode-prompt-file.md`.
+  `plan-mode-off-prompt.txt`, `plan-mode-reminder.txt`, and
+  `plan-mode-off-reminder.txt` beside the module; a missing or blank file
+  fails the extension load instead of injecting nothing. See
+  `adr/0011-plan-mode-prompt-file.md`.
 - `context` keeps exactly one mode message per request — the newest of the
   type the applied mode calls for: the newest read-only message while the
   mode is applied (dropping off-notices and older reminders), the newest

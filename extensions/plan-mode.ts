@@ -12,12 +12,14 @@
  * list and removing `edit` and `write` to enable the mode, restoring the
  * recorded list to disable it — and injects a hidden message: the full
  * read-only instruction when the mode turns on, a short notice that the
- * mode is off when it turns off. While the mode stays on, a compact
- * reminder (also `plan-mode-context`) is attached to *every* prompt, so
- * the mode is visible on the current turn instead of only at its
- * transition (ADR-0015): models read the mode from the reminder attached
- * to the message they are answering, and a reminder-free turn otherwise
- * reads as "mode off".
+ * mode is off when it turns off. A compact reminder is then attached to
+ * *every* prompt so the mode is visible on the current turn instead of
+ * only at its transition (ADR-0015): models read the mode from the
+ * reminder attached to the message they are answering, and a reminder-free
+ * turn otherwise reads as the opposite mode. While the mode stays applied
+ * the reminder is `plan-mode-context`; after a lift, and only in a session
+ * where the mode was used, it is `plan-mode-off`, so the model does not
+ * keep planning after the lift.
  *
  * The `context` hook keeps exactly one mode message per request — the
  * newest of the type the applied mode calls for — so reminders do not
@@ -118,6 +120,14 @@ const PLAN_REMINDER_FILE = fileURLToPath(
 
 /** Hidden reminder attached to every prompt while plan mode is applied. */
 export const PLAN_REMINDER = loadPlanInstruction(PLAN_REMINDER_FILE);
+
+/** File holding the reminder attached to every prompt after a lift. */
+const PLAN_OFF_REMINDER_FILE = fileURLToPath(
+  new URL("./plan-mode-off-reminder.txt", import.meta.url),
+);
+
+/** Hidden reminder attached to every prompt once plan mode has been lifted. */
+export const PLAN_OFF_REMINDER = loadPlanInstruction(PLAN_OFF_REMINDER_FILE);
 
 /** File holding the standing system-prompt guideline while the mode is applied. */
 const PLAN_GUIDELINE_ON_FILE = fileURLToPath(
@@ -407,7 +417,12 @@ export function planModeExtension(pi: ExtensionAPI): void {
       // (ADR-0015): the model reads the mode from the reminder attached to
       // the message it is answering, and a reminder-free turn otherwise
       // reads as mode-off.
-      result = reminderMessage();
+      result = reminderMessage(PLAN_CONTEXT_TYPE, PLAN_REMINDER);
+    } else if (everApplied) {
+      // After a lift, re-assert the off state on every prompt the same way;
+      // otherwise the heavily reinforced read-only stance outlives the mode
+      // and the model keeps proposing plans instead of acting.
+      result = reminderMessage(PLAN_OFF_TYPE, PLAN_OFF_REMINDER);
     }
 
     // Standing guideline (ADR-0014): re-synced on every prompt, never
@@ -439,12 +454,12 @@ export function planModeExtension(pi: ExtensionAPI): void {
     };
   }
 
-  /** The hidden reminder attached to every prompt while plan mode is applied. */
-  function reminderMessage() {
+  /** The hidden reminder for a mode, attached to every prompt while it holds. */
+  function reminderMessage(customType: string, content: string) {
     return {
       message: {
-        customType: PLAN_CONTEXT_TYPE,
-        content: PLAN_REMINDER,
+        customType,
+        content,
         display: false,
       },
     };
