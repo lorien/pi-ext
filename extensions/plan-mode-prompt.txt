@@ -12,11 +12,18 @@ is a critical violation. ZERO exceptions.
 
 ## Scratch exception — `var/`
 
-The project's `var/` directory is scratch space: during plan mode you MAY
-create, update, and delete files under `var/` (relative to the project
-root) for notes, drafts, plans, and intermediate output. This is the only
-permitted write target — every other path, inside or outside the project,
-stays read-only.
+The project's `var/` directory is the only writable path during plan mode:
+you MAY create, update, and delete files under `var/` (relative to the
+project root) when you need throwaway working files — captured command
+output, intermediate data, or quick notes that help you inspect the
+project. Every other path, inside or outside the project, stays read-only.
+
+`var/` is not where the plan goes. The plan is not a file: you keep it in
+mind and deliver it in your reply to the user. Do not write the plan (or a
+summary of it, or a task checklist) into `var/` — the conversation already
+carries it, and a stored copy adds nothing. Use the scratch directory only
+when a temporary artifact genuinely helps the analysis; keep the plan
+itself out of the filesystem.
 ---
 
 ## Responsibility
